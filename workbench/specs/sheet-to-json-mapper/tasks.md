@@ -59,7 +59,7 @@
   - [x] 10.1 Configure Rollup to bundle JS/CSS into single `dist/bundle.js`.  
   - [x] 10.2 Verify output runs with `file://` protocol (no server).
 
-- [ ] **11. Performance & Accessibility Validation** *(Req 9.1 – 9.3)*  
-  - [ ] 11.1 Automated performance benchmark using `performance.now()` in Jest.  
-  - [ ] 11.2 Integrate Axe-core accessibility checks in CI.  
-  - [ ] 11.3 Manual keyboard navigation review.
+ - [x] **11. Performance & Accessibility Validation** *(Req 9.1 – 9.3)*  
+  - [x] 11.1 Automated performance benchmark using `performance.now()` in Jest.  
+  - [x] 11.2 Integrate Axe-core accessibility checks in CI.  
+  - [x] 11.3 Manual keyboard navigation review.
