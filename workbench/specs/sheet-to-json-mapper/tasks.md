@@ -18,7 +18,7 @@
   - [x] 3.5 Unit tests with mock workbooks (good & corrupt).
 
 - [ ] **4. Worksheet Renderer** *(Req 2.1 – 2.3)*  
-  - [ ] 4.1 Build `SheetRenderer` that converts worksheet array → HTML table.  
+  - [x] 4.1 Build `SheetRenderer` that converts worksheet array → HTML table.  
   - [ ] 4.2 Render merged regions with visual overlay.  
   - [ ] 4.3 Evaluate formula cells, ignore formula text.  
   - [ ] 4.4 Ensure scroll performance for 500×50 grid (<1 s render).  
