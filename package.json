@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Front-end tool that maps Excel/CSV worksheets to JSON via visual UI.",
   "scripts": {
-    "dev": "es-dev-server --app-index index.html --reload --port 8000",
+    "dev": "es-dev-server --config es-dev-server.config.js --app-index index.html --reload --port 8000",
     "build": "rollup -c && node scripts/postbuild.js",
     "test": "jest",
     "test:ci": "jest --runInBand",

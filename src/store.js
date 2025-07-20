@@ -13,7 +13,14 @@ const initialState = {
  * (No-op in production for performance.)
  */
 function deepFreeze(obj) {
-  if (process.env.NODE_ENV === 'production' || obj === null || typeof obj !== 'object') {
+  // Determine production mode in a way that works both in Node (tests, build)
+  // and in the browser where the `process` global might be undefined.
+  const isProd =
+    typeof process !== 'undefined' &&
+    process.env &&
+    process.env.NODE_ENV === 'production';
+
+  if (isProd || obj === null || typeof obj !== 'object') {
     return obj;
   }
   Object.freeze(obj);
