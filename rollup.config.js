@@ -1,5 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import postcss from 'rollup-plugin-postcss';
 
 export default {
   input: 'src/main.js',
@@ -8,5 +9,9 @@ export default {
     format: 'esm',
     sourcemap: true
   },
-  plugins: [resolve(), commonjs()]
+  plugins: [
+    resolve(),
+    commonjs(),
+    postcss({ inject: true })
+  ]
 };

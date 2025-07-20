@@ -55,9 +55,9 @@
   - [x] 9.4 Error banner with retry on POST failure.  
   - [x] 9.5 E2E tests for success & failure cases.
 
-- [ ] **10. Build Script & Static Bundle** *(Req 8.1 – 8.2)*  
-  - [ ] 10.1 Configure Rollup to bundle JS/CSS into single `dist/bundle.js`.  
-  - [ ] 10.2 Verify output runs with `file://` protocol (no server).
+ - [x] **10. Build Script & Static Bundle** *(Req 8.1 – 8.2)*  
+  - [x] 10.1 Configure Rollup to bundle JS/CSS into single `dist/bundle.js`.  
+  - [x] 10.2 Verify output runs with `file://` protocol (no server).
 
 - [ ] **11. Performance & Accessibility Validation** *(Req 9.1 – 9.3)*  
   - [ ] 11.1 Automated performance benchmark using `performance.now()` in Jest.  

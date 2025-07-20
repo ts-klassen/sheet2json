@@ -4,7 +4,7 @@
   "description": "Front-end tool that maps Excel/CSV worksheets to JSON via visual UI.",
   "scripts": {
     "dev": "es-dev-server --app-index index.html --reload --port 8000",
-    "build": "rollup -c",
+    "build": "rollup -c && node scripts/postbuild.js",
     "test": "jest",
     "test:ci": "jest --runInBand",
     "cypress": "cypress open",
@@ -25,6 +25,7 @@
     "rollup": "^3.26.0",
     "@rollup/plugin-node-resolve": "^15.2.1",
     "@rollup/plugin-commonjs": "^24.1.0",
+    "rollup-plugin-postcss": "^4.0.2",
     "es-dev-server": "^2.0.0",
     "serve": "^14.2.0"
   },

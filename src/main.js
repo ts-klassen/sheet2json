@@ -7,6 +7,7 @@ import SchemaInput from './components/SchemaInput.js';
 import MappingPanel from './components/MappingPanel.js';
 import { loadWorkbookFile } from './utils/workbookLoader.js';
 import './autoDetector.js';
+import '../styles/styles.css';
 
 console.log('Sheet-to-JSON Mapper loaded');
 
