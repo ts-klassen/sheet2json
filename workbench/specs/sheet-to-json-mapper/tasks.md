@@ -48,12 +48,12 @@
   - [x] 8.3 Warning UI for missing cell addresses.  
   - [x] 8.4 Unit tests for serialise/deserialise.
 
-- [ ] **9. JSON Exporter & Callback** *(Req 7.1 – 7.4)*  
-  - [ ] 9.1 Transform mapping → JSON respecting schema types (arrays/scalars).  
-  - [ ] 9.2 Create `Exporter.post(url, json)` using `fetch`.  
-  - [ ] 9.3 Display JSON modal & download link after success.  
-  - [ ] 9.4 Error banner with retry on POST failure.  
-  - [ ] 9.5 E2E tests for success & failure cases.
+ - [x] **9. JSON Exporter & Callback** *(Req 7.1 – 7.4)*  
+  - [x] 9.1 Transform mapping → JSON respecting schema types (arrays/scalars).  
+  - [x] 9.2 Create `Exporter.post(url, json)` using `fetch`.  
+  - [x] 9.3 Display JSON modal & download link after success.  
+  - [x] 9.4 Error banner with retry on POST failure.  
+  - [x] 9.5 E2E tests for success & failure cases.
 
 - [ ] **10. Build Script & Static Bundle** *(Req 8.1 – 8.2)*  
   - [ ] 10.1 Configure Rollup to bundle JS/CSS into single `dist/bundle.js`.  
