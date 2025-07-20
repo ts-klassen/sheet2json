@@ -5,10 +5,10 @@
   - Install dev dependencies: SheetJS, Jest, Cypress, ESLint.  
   - Set up basic CI workflow running unit & E2E tests.
 
-- [ ] **2. Core State Store** *(Req 2.*, 3.*, 4.*, 5.*, 6.*)*  
-  - [ ] 2.1 Create `src/store.js` implementing observable pattern (subscribe/notify).  
-  - [ ] 2.2 Define state slices: `workbook`, `schema`, `mapping`, `errors`.  
-  - [ ] 2.3 Add unit tests for state mutations.
+- [x] **2. Core State Store** *(Req 2.*, 3.*, 4.*, 5.*, 6.*)*  
+  - [x] 2.1 Create `src/store.js` implementing observable pattern (subscribe/notify).  
+  - [x] 2.2 Define state slices: `workbook`, `schema`, `mapping`, `errors`.  
+  - [x] 2.3 Add unit tests for state mutations.
 
 - [ ] **3. Workbook Input & Sheet Selection** *(Req 1.1 – 1.3)*  
   - [ ] 3.1 Implement `FileInput` component (`src/components/FileInput.js`).  
