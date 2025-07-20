@@ -7,6 +7,7 @@ import SchemaInput from './components/SchemaInput.js';
 import MappingPanel from './components/MappingPanel.js';
 import { loadWorkbookFile } from './utils/workbookLoader.js';
 import './autoDetector.js';
+import SheetRenderer from './components/SheetRenderer.js';
 import '../styles/styles.css';
 
 console.log('Sheet-to-JSON Mapper loaded');
@@ -34,3 +35,6 @@ new FileInput({
 new SheetPicker({ parent: appEl });
 new SchemaInput({ parent: appEl });
 new MappingPanel({ parent: appEl });
+
+// Sheet grid
+new SheetRenderer({ parent: appEl });
