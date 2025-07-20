@@ -24,11 +24,11 @@
   - [x] 4.4 Ensure scroll performance for 500×50 grid (<1 s render).  
   - [x] 4.5 Component tests measuring render time.
 
-- [ ] **5. Schema Input Panel** *(Req 3.1 – 3.2)*  
-  - [ ] 5.1 Implement `SchemaInput` component for file paste/upload.  
-  - [ ] 5.2 Validate JSON syntax and presence of `properties`.  
-  - [ ] 5.3 Display schema fields with colour swatches in sidebar.  
-  - [ ] 5.4 Unit tests for validation logic.
+ - [x] **5. Schema Input Panel** *(Req 3.1 – 3.2)*  
+  - [x] 5.1 Implement `SchemaInput` component for file paste/upload.  
+  - [x] 5.2 Validate JSON syntax and presence of `properties`.  
+  - [x] 5.3 Display schema fields with colour swatches in sidebar.  
+  - [x] 5.4 Unit tests for validation logic.
 
 - [ ] **6. Auto-Detection Module** *(Req 4.1 – 4.3)*  
   - [ ] 6.1 Implement `AutoDetector` with positional rule set.  

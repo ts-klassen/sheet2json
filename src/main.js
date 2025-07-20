@@ -1,24 +1,21 @@
-/* Entry point for Sheet-to-JSON Mapper.
- * For now this just verifies that the application bundle loads correctly.
- */
+/* Entry point for Sheet-to-JSON Mapper demo harness. */
+
+import { store } from './store.js';
+import FileInput from './components/FileInput.js';
+import SheetPicker from './components/SheetPicker.js';
+import SchemaInput from './components/SchemaInput.js';
+import { loadWorkbookFile } from './utils/workbookLoader.js';
 
 console.log('Sheet-to-JSON Mapper loaded');
 
-// Render a simple placeholder so Cypress smoke test can assert DOM content.
 const appEl = document.getElementById('app');
-if (appEl) {
-  const heading = document.createElement('h1');
-  heading.textContent = 'Sheet-to-JSON Mapper';
-  appEl.appendChild(heading);
 
-// Attach components for demo/testing
-import FileInput from './components/FileInput.js';
-import { loadWorkbookFile } from './utils/workbookLoader.js';
-import { store } from './store.js';
-import SheetPicker from './components/SheetPicker.js';
+// Heading for smoke test
+const heading = document.createElement('h1');
+heading.textContent = 'Sheet-to-JSON Mapper';
+appEl.appendChild(heading);
 
-new SheetPicker({ parent: appEl });
-
+// Instantiate components
 new FileInput({
   parent: appEl,
   onFileSelected: async (files) => {
@@ -30,4 +27,6 @@ new FileInput({
     }
   }
 });
-}
+
+new SheetPicker({ parent: appEl });
+new SchemaInput({ parent: appEl });
