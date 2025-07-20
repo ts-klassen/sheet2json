@@ -10,12 +10,12 @@
   - [x] 2.2 Define state slices: `workbook`, `schema`, `mapping`, `errors`.  
   - [x] 2.3 Add unit tests for state mutations.
 
-- [ ] **3. Workbook Input & Sheet Selection** *(Req 1.1 – 1.3)*  
+ - [x] **3. Workbook Input & Sheet Selection** *(Req 1.1 – 1.3)*  
   - [x] 3.1 Implement `FileInput` component (`src/components/FileInput.js`).  
   - [x] 3.2 Integrate SheetJS to parse `.xlsx`, `.xls`, `.csv`.  
   - [x] 3.3 Detect multiple worksheets and render sheet picker dialog.  
-  - [ ] 3.4 Error handling for unsupported/corrupt files.  
-  - [ ] 3.5 Unit tests with mock workbooks (good & corrupt).
+  - [x] 3.4 Error handling for unsupported/corrupt files.  
+  - [x] 3.5 Unit tests with mock workbooks (good & corrupt).
 
 - [ ] **4. Worksheet Renderer** *(Req 2.1 – 2.3)*  
   - [ ] 4.1 Build `SheetRenderer` that converts worksheet array → HTML table.  

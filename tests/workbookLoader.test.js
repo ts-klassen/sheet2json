@@ -18,4 +18,17 @@ describe('WorkbookLoader', () => {
     expect(data[0]).toEqual(['Name', 'Value']);
     expect(data[1]).toEqual(['Foo', 1]);
   });
+
+  test('throws descriptive error for unsupported extension', () => {
+    const csv = 'foo';
+    const buffer = new Uint8Array(Buffer.from(csv, 'utf8'));
+
+    expect(() => parseArrayBuffer(buffer, 'image.png')).toThrow('Unsupported file type');
+  });
+
+  test('throws descriptive error for corrupt file', () => {
+    // Provide random bytes that SheetJS cannot parse as any spreadsheet or CSV
+    const random = new Uint8Array([0xff, 0xd8, 0x00, 0x00]);
+    expect(() => parseArrayBuffer(random, 'data.xlsx')).toThrow('Unsupported or corrupt file');
+  });
 });
