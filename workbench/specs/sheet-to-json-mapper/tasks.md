@@ -42,11 +42,11 @@
   - [x] 7.4 Visual feedback for unmapped fields.  
   - [x] 7.5 Component tests simulating drag-and-drop.
 
-- [ ] **8. Template Manager** *(Req 6.1 – 6.3)*  
-  - [ ] 8.1 Implement `saveTemplate(mapping)` → downloadable JSON.  
-  - [ ] 8.2 Implement `loadTemplate(file)` with validation against current sheet.  
-  - [ ] 8.3 Warning UI for missing cell addresses.  
-  - [ ] 8.4 Unit tests for serialise/deserialise.
+ - [x] **8. Template Manager** *(Req 6.1 – 6.3)*  
+  - [x] 8.1 Implement `saveTemplate(mapping)` → downloadable JSON.  
+  - [x] 8.2 Implement `loadTemplate(file)` with validation against current sheet.  
+  - [x] 8.3 Warning UI for missing cell addresses.  
+  - [x] 8.4 Unit tests for serialise/deserialise.
 
 - [ ] **9. JSON Exporter & Callback** *(Req 7.1 – 7.4)*  
   - [ ] 9.1 Transform mapping → JSON respecting schema types (arrays/scalars).  
