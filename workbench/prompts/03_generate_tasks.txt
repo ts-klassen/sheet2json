@@ -1,0 +1,26 @@
+You are running inside **Codex CLI** and both `requirements.md` and `design.md` for the feature already exist and have been approved.
+
+Objective: Create the **implementation task list** (`tasks.md`) that will guide code-level work on the feature.
+
+Steps:
+1. Locate the feature directory `workbench/specs/*/` that contains the approved requirements and design documents.
+2. Inside that directory create (or overwrite) `tasks.md`.
+3. Use `apply_patch` to write the file with a numbered checkbox list of coding tasks, then **stop** – no code implementation yet.
+
+Formatting requirements (from the extension workflow):
+
+• The file begins with `# Implementation Plan` and then a numbered checkbox list.
+• Maximum two levels of hierarchy:
+  - Top-level items represent large steps/epics (only if needed).
+  - Sub-tasks use decimal notation (1.1, 1.2, …).
+  - Every item is a markdown checkbox (`- [ ]`).
+
+• Each task must:
+  - Be actionable by a coding agent (write, modify, or test specific code).
+  - Reference the relevant acceptance criteria numbers from `requirements.md`.
+  - Include bullet-point clarification underneath when helpful (file paths, test names, etc.).
+
+• Exclude any non-coding work (deployment, user testing, etc.).
+• Sequence tasks so complexity grows gradually and tests are introduced early.
+
+After the `apply_patch` call, output nothing else.

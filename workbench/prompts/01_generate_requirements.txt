@@ -1,0 +1,39 @@
+You are running inside **Codex CLI**, with the git-backed workspace already open.
+
+Objective: Create the **initial requirements document** for a new feature that the user has been discussing in the current conversation.
+
+1. Derive a short, kebab-case *feature name* from the user’s idea (e.g. `user-authentication`).
+2. If the directory `workbench/specs/<feature-name>/` does not exist, create it.
+3. Inside that directory create `requirements.md` (overwrite if it already exists) and populate it with a properly-formatted *Requirements Document* that obeys all of the rules below.
+4. Use `apply_patch` to write the file in one shot, then **stop** – do not generate design or tasks yet.
+
+Formatting rules (taken from the extension workflow):
+
+• Top of the file:
+```md
+# Requirements Document
+
+## Introduction
+
+<one-paragraph summary of the feature>
+```
+
+• Then, for each requirement (numbered 1, 2, 3 …):
+
+```md
+### Requirement <n>
+
+**User Story:** As a <role>, I want <feature>, so that <benefit>
+
+#### Acceptance Criteria
+
+1. WHEN <event> THEN system SHALL <response>
+2. … additional EARS-style criteria …
+```
+
+Guidelines:
+• Provide a hierarchical numbered list of requirements; sub-requirements may be added (e.g. 1.1).
+• Use EARS syntax (“WHEN / IF … THEN system SHALL …”) for acceptance criteria.
+• Consider edge-cases, UX, technical constraints and success criteria.
+
+After the `apply_patch` call, output nothing else.

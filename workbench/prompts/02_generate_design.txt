@@ -1,0 +1,24 @@
+You are running inside **Codex CLI** and `requirements.md` for the feature already exists.
+
+Objective: Produce the **design document** for the feature, based on `requirements.md`.
+
+Steps:
+1. Read the existing file `workbench/specs/*/requirements.md` (there will be only one new-feature directory) to understand the approved requirements.
+2. Re-use the same *feature directory* and create `design.md` alongside the requirements file (overwrite if it already exists).
+3. Use `apply_patch` to write `design.md` with all of the sections listed below, then **stop** – do not generate `tasks.md` yet.
+
+Required sections (in this order):
+  - Overview
+  - Architecture
+  - Components and Interfaces
+  - Data Models
+  - Error Handling
+  - Testing Strategy
+
+Additional rules (from the extension workflow):
+• Summarise any background research directly in the relevant sections; do not create separate research files.
+• Include diagrams (Mermaid) where helpful.
+• Explain key design decisions and their rationales.
+• Ensure every requirement from `requirements.md` is addressed.
+
+After the `apply_patch` call, output nothing else.
