@@ -19,6 +19,20 @@ describe('Schema utils', () => {
     expect(() => validateSchemaObject(schema)).toThrow('Schema missing');
   });
 
+  test('handles array schema with items.properties', () => {
+    const arraySchema = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          alpha: { type: 'string' },
+          beta: { type: 'number' }
+        }
+      }
+    };
+    expect(validateSchemaObject(arraySchema)).toEqual(['alpha', 'beta']);
+  });
+
   test('getSchemaFields returns field list', () => {
     const { fields } = getSchemaFields(validSchemaText);
     expect(fields).toEqual(['name', 'age']);

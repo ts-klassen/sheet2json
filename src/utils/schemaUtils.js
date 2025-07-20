@@ -28,10 +28,18 @@ export function parseSchema(text) {
  */
 export function validateSchemaObject(schema) {
   if (!schema || typeof schema !== 'object') throw new Error('Schema must be an object');
-  if (!schema.properties || typeof schema.properties !== 'object') {
-    throw new Error('Schema missing "properties"');
+
+  // Case 1: top-level properties
+  if (schema.properties && typeof schema.properties === 'object') {
+    return Object.keys(schema.properties);
   }
-  return Object.keys(schema.properties);
+
+  // Case 2: top-level array with items.properties
+  if (schema.type === 'array' && schema.items && typeof schema.items === 'object' && schema.items.properties) {
+    return Object.keys(schema.items.properties);
+  }
+
+  throw new Error('Schema missing "properties"');
 }
 
 /**
