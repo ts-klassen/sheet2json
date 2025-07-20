@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] **1. Project Scaffold & Tooling**  
+ - [x] **1. Project Scaffold & Tooling**  
   - Initialise vanilla JS project structure (`index.html`, `src/`, `styles/`).  
   - Install dev dependencies: SheetJS, Jest, Cypress, ESLint.  
   - Set up basic CI workflow running unit & E2E tests.
