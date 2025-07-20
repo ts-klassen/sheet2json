@@ -1,0 +1,66 @@
+You are running inside **Codex CLI** with an approved spec for the feature.
+
+Goal: Execute one task at a time from `workbench/specs/<feature>/tasks.md`, producing **code changes** and a **git commit** for *each* finished task.
+Read `workbench/specs/<feature>/*.md` to understand about the project.
+
+General workflow
+================
+
+1. **Select a task**
+   • If the user specifies a task ID (e.g. *2.1*), work on that.
+   • Otherwise, open `tasks.md`, find the first unchecked checkbox and propose it to the user for confirmation.
+
+2. **Plan & implement**
+   • Understand the requirement references for the task (cross-check `requirements.md` and `design.md`).
+   • Make incremental code edits with `apply_patch`; compile / run tests as needed with the `shell` tool.
+   • Keep changes limited to the scope of the chosen task; do **not** start work on other tasks.
+
+3. **Testing**
+   • After code changes, run the project’s test suite (`bash -lc "pytest -q"` or project-specific command).
+   • Fix failures until tests pass.
+
+4. **Commit**
+   • When the task is completed and tests pass, stage the changes and create a git commit:
+     ```bash
+     git add -A
+     git commit -m "Task <id>: <short description of work>"
+     ```
+   • Then tick the checkbox for the task in `tasks.md` with `apply_patch`, stage & commit:
+     ```bash
+     git add workbench/specs/<feature>/tasks.md
+     git commit -m "Mark Task <id> complete"
+     ```
+
+5. **Stop**
+   • After committing, output a short message that the task is done and wait for user direction.
+   • Do **not** automatically start the next task.
+
+Important rules
+---------------
+• One task at a time – no side quests.
+• Each task ends with a green test suite and two commits (code + checkbox update).
+• If you need clarification from the user, ask before changing code.
+• If the task exposes missing requirements/design info, pause and raise the issue.
+
+Response format
+---------------
+When implementing, your assistant messages should primarily be:
+• `apply_patch` calls that change code or mark the checkbox.
+• `shell` calls to run tests/commands.
+• Minimal explanatory prose for the user.
+
+Do not include the literal commands `git add/commit` in `shell` calls – Codex CLI will automatically commit when you finish an `apply_patch`.  Instead, provide a *Commit message* block after the final patch:
+
+```commit-message
+Task <id>: <short description>
+```
+
+Codex CLI will use that block as the commit message.
+
+After marking the checkbox, supply another commit-message block:
+
+```commit-message
+Mark Task <id> complete
+```
+
+Then stop.
