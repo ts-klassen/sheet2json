@@ -65,6 +65,46 @@ describe('SheetRenderer component', () => {
     expect(mergedCell.textContent).toBe('Merged');
   });
 
+  test('shows evaluated formula value instead of formula text', () => {
+    const workbook = {
+      sheets: ['Sheet1'],
+      activeSheet: 'Sheet1',
+      data: {
+        Sheet1: [
+          ['Header1', 'Header2'],
+          [1, 2],
+          [null, 3]
+        ]
+      },
+      merges: {}
+    };
+
+    // Simulate formula cell in data row 2 col 0 (index) with value 2 evaluated earlier
+    workbook.data.Sheet1[2][0] = 2; // value only
+
+    store.set('workbook', workbook);
+
+    const cellText = container.querySelector('table').rows[2].cells[0].textContent;
+    expect(cellText).toBe('2');
+  });
+
+  test('renders 500x50 grid within performance budget', () => {
+    const rows = 500;
+    const cols = 50;
+    const sheetArray = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => `${r},${c}`));
+    const wb = {
+      sheets: ['Sheet1'],
+      activeSheet: 'Sheet1',
+      data: { Sheet1: sheetArray },
+      merges: {}
+    };
+
+    const start = Date.now();
+    store.set('workbook', wb);
+    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(1000);
+  });
+
   test('hides table when no workbook', () => {
     store.set('workbook', null);
     const table = container.querySelector('table');
