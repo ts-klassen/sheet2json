@@ -69,6 +69,68 @@ interface SchemaField { name: string; type: string; /* trimmed subset of JSON Sc
 4. **Template File** – JSON `{ "fields": Mapping, "sheetName": string }` downloadable/uploadable.
 5. **Export Payload** – JSON produced by reducing `Mapping` over the current worksheet, producing either scalar or array values per field; respects schema data types (string, number, boolean).
 
+### Example Schema & Result
+
+To illustrate, here is a representative JSON Schema that a user might upload, along with the JSON document produced after mapping:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SecurityCheckQuestions",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "no": {
+        "type": "string",
+        "description": "The question number or identifier."
+      },
+      "question": {
+        "type": "string",
+        "description": "The text of the security question."
+      },
+      "notes": {
+        "type": "array",
+        "description": "Any additional instructions or clarifications for the question.",
+        "items": { "type": "string" }
+      },
+      "titles": {
+        "type": "array",
+        "description": "Relevant columns or categories from the Excel sheet that the question belongs to.",
+        "items": { "type": "string" }
+      }
+    },
+    "required": ["no", "titles", "question", "notes"]
+  }
+}
+```
+
+After a user maps the relevant cells and completes the export, the resulting JSON might look like:
+
+```json
+[
+  {
+    "no": "1",
+    "question": "Please provide the encryption method used in your system.",
+    "notes": [
+      "Please specify the exact method name.",
+      "Example: RSA"
+    ],
+    "titles": ["Data", "Data Storage", "Encryption"]
+  },
+  {
+    "no": "2",
+    "question": "What is your password policy?",
+    "notes": [
+      "Explain the minimum length and complexity requirements."
+    ],
+    "titles": ["Authentication", "Password Policy"]
+  }
+]
+```
+
+These examples help clarify how the schema properties map to individual or multiple cells and how arrays are produced when multiple cells are assigned to a field.
+
 ## Error Handling
 
 | Scenario | Detection | User Feedback | Recovery |
