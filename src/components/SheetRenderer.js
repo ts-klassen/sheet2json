@@ -18,6 +18,12 @@ export default class SheetRenderer {
     this._onStoreMappingChange = this._onStoreMappingChange.bind(this);
     this.unsubscribe = store.subscribe(this._onStoreChange);
     this.unsubscribeMapping = store.subscribe(this._onStoreMappingChange);
+
+    // Drag-and-drop handlers for interactive mapping
+    this._onDragOver = this._onDragOver.bind(this);
+    this._onDrop = this._onDrop.bind(this);
+    this.table.addEventListener('dragover', this._onDragOver);
+    this.table.addEventListener('drop', this._onDrop);
   }
 
   _onStoreChange(newState, prevState) {
@@ -141,6 +147,43 @@ export default class SheetRenderer {
   destroy() {
     this.unsubscribe && this.unsubscribe();
     this.unsubscribeMapping && this.unsubscribeMapping();
+    this.table.removeEventListener('dragover', this._onDragOver);
+    this.table.removeEventListener('drop', this._onDrop);
     if (this.table.parentNode) this.table.parentNode.removeChild(this.table);
+  }
+
+  _onDragOver(e) {
+    // Allow drop by preventing default
+    if (e.dataTransfer && e.dataTransfer.types.includes('text/plain')) {
+      e.preventDefault();
+    }
+  }
+
+  _onDrop(e) {
+    e.preventDefault();
+    const field = e.dataTransfer.getData('text/plain');
+    if (!field) return;
+
+    const td = e.target.closest('td');
+    if (!td) return;
+    const row = parseInt(td.dataset.r, 10);
+    const col = parseInt(td.dataset.c, 10);
+    if (Number.isNaN(row) || Number.isNaN(col)) return;
+
+    const state = store.getState();
+    const sheet = state.workbook?.activeSheet;
+    if (!sheet) return;
+
+    // Update mapping
+    const newAddr = { sheet, row, col };
+    const mapping = { ...state.mapping };
+    const existing = mapping[field] ? [...mapping[field]] : [];
+
+    // Avoid duplicate addresses
+    if (!existing.some((addr) => addr.sheet === sheet && addr.row === row && addr.col === col)) {
+      existing.push(newAddr);
+      mapping[field] = existing;
+      store.set('mapping', mapping);
+    }
   }
 }
