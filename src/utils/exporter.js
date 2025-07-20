@@ -1,19 +1,10 @@
 import { store } from '../store.js';
 
-/**
- * Transform the current mapping and workbook into output JSON.
- * Handles scalar vs array fields based on schema property type.
- */
-export function buildJson() {
-  const { mapping, workbook, schema } = store.getState();
-  if (!mapping || !schema || !workbook) {
-    throw new Error('Missing mapping, schema, or workbook');
-  }
-
+function mappingToObject(mapping, workbook, schema) {
   const result = {};
 
   Object.entries(mapping).forEach(([field, addresses]) => {
-    const prop = schema.properties?.[field] || {};
+    const prop = (schema.properties || schema.items?.properties || {})[field] || {};
     const isArray = prop.type === 'array';
 
     const values = addresses.map(({ sheet, row, col }) => {
@@ -25,6 +16,28 @@ export function buildJson() {
   });
 
   return result;
+}
+
+/**
+ * Transform the current mapping and workbook into output JSON.
+ * Handles scalar vs array fields based on schema property type.
+ */
+export function buildJson() {
+  const { mapping, workbook, schema } = store.getState();
+  if (!mapping || !schema || !workbook) {
+    throw new Error('Missing mapping, schema, or workbook');
+  }
+
+  // Helper to get cell value
+  // If schema root is array, use records array + current mapping as last record
+  if (schema.type === 'array') {
+    const snapshots = [...store.getState().records];
+    if (Object.keys(mapping).length) snapshots.push(mapping);
+    return snapshots.map((snap) => mappingToObject(snap, workbook, schema.items || schema));
+  }
+
+  // Object root – just convert current mapping
+  return mappingToObject(mapping, workbook, schema);
 }
 
 /**

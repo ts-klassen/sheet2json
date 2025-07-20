@@ -39,6 +39,13 @@ export default class MappingPanel {
       li.dataset.field = field;
       li.style.margin = '4px 0';
       li.style.cursor = 'grab';
+      li.style.userSelect = 'none';
+      li.style.webkitUserSelect = 'none';
+
+      // Prevent text selection so drag starts reliably
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+      });
 
       const swatch = document.createElement('span');
       swatch.style.display = 'inline-block';

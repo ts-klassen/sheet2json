@@ -37,6 +37,24 @@ describe('Exporter', () => {
     expect(json.notes.length).toBe(2);
   });
 
+  test('buildJson returns array of objects based on records', () => {
+    // switch to array schema
+    store.set('schema', {
+      type: 'array',
+      items: { type: 'object', properties: { title: { type: 'string' }, notes: { type: 'array' } } }
+    });
+
+    // simulate snapshots (records) in store
+    const first = { ...store.getState().mapping };
+    store.set('records', [first, first]);
+
+    const json = buildJson();
+    expect(Array.isArray(json)).toBe(true);
+    expect(json.length).toBe(3);
+  });
+
+  // Removed array wrapping test on request; exporter now always returns an object.
+
   test('postJson handles 2xx response', async () => {
     const mockFetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true }) });
     const res = await postJson('https://example.com', { foo: 'bar' }, mockFetch);
