@@ -35,12 +35,12 @@
   - [x] 6.2 Populate `Store.mapping` and apply colour overlays.  
   - [x] 6.3 Unit tests verifying guesses for sample workbooks.
 
-- [ ] **7. Interactive Mapping UI** *(Req 5.1 – 5.3)*  
+ - [x] **7. Interactive Mapping UI** *(Req 5.1 – 5.3)*  
   - [x] 7.1 Implement drag source logic in `MappingPanel`.  
   - [x] 7.2 Implement drop target logic in `SheetRenderer` overlay layer.  
-  - [ ] 7.3 Support multi-cell selection per field -> mapping array.  
-  - [ ] 7.4 Visual feedback for unmapped fields.  
-  - [ ] 7.5 Component tests simulating drag-and-drop.
+  - [x] 7.3 Support multi-cell selection per field -> mapping array.  
+  - [x] 7.4 Visual feedback for unmapped fields.  
+  - [x] 7.5 Component tests simulating drag-and-drop.
 
 - [ ] **8. Template Manager** *(Req 6.1 – 6.3)*  
   - [ ] 8.1 Implement `saveTemplate(mapping)` → downloadable JSON.  
