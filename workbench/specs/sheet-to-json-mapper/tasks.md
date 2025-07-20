@@ -12,7 +12,7 @@
 
 - [ ] **3. Workbook Input & Sheet Selection** *(Req 1.1 – 1.3)*  
   - [x] 3.1 Implement `FileInput` component (`src/components/FileInput.js`).  
-  - [ ] 3.2 Integrate SheetJS to parse `.xlsx`, `.xls`, `.csv`.  
+  - [x] 3.2 Integrate SheetJS to parse `.xlsx`, `.xls`, `.csv`.  
   - [ ] 3.3 Detect multiple worksheets and render sheet picker dialog.  
   - [ ] 3.4 Error handling for unsupported/corrupt files.  
   - [ ] 3.5 Unit tests with mock workbooks (good & corrupt).
