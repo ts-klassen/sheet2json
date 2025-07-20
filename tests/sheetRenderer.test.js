@@ -39,6 +39,32 @@ describe('SheetRenderer component', () => {
     expect(table.rows[1].cells[1].textContent).toBe('B2');
   });
 
+  test('renders colspan for merged cells', () => {
+    const wb = {
+      sheets: ['Sheet1'],
+      activeSheet: 'Sheet1',
+      data: {
+        Sheet1: [
+          ['Merged', null, 'C1'],
+          ['A2', 'B2', 'C2']
+        ]
+      },
+      merges: {
+        Sheet1: [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }
+        ]
+      }
+    };
+
+    store.set('workbook', wb);
+
+    const table = container.querySelector('table');
+    expect(table.rows[0].cells.length).toBe(2); // merged cell + C1
+    const mergedCell = table.rows[0].cells[0];
+    expect(mergedCell.colSpan).toBe(2);
+    expect(mergedCell.textContent).toBe('Merged');
+  });
+
   test('hides table when no workbook', () => {
     store.set('workbook', null);
     const table = container.querySelector('table');

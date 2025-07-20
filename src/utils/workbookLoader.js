@@ -54,17 +54,24 @@ export function parseArrayBuffer(buffer, fileName = '') {
   const sheets = wb.SheetNames;
   const activeSheet = sheets[0];
 
-  // Convert sheets to 2D arrays of cell values.
+  // Convert sheets to 2D arrays of cell values and gather merge ranges.
   const data = {};
+  const merges = {};
+
   sheets.forEach((sheetName) => {
     const sheet = wb.Sheets[sheetName];
     data[sheetName] = utils.sheet_to_json(sheet, { header: 1, raw: true, defval: null });
+    merges[sheetName] = (sheet['!merges'] || []).map((rng) => ({
+      s: { r: rng.s.r, c: rng.s.c },
+      e: { r: rng.e.r, c: rng.e.c }
+    }));
   });
 
   return {
     sheets,
     activeSheet,
-    data
+    data,
+    merges
   };
 }
 
