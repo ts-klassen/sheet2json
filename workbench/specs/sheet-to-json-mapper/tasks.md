@@ -31,7 +31,7 @@
   - [x] 5.4 Unit tests for validation logic.
 
 - [ ] **6. Auto-Detection Module** *(Req 4.1 – 4.3)*  
-  - [ ] 6.1 Implement `AutoDetector` with positional rule set.  
+  - [x] 6.1 Implement `AutoDetector` with positional rule set.  
   - [ ] 6.2 Populate `Store.mapping` and apply colour overlays.  
   - [ ] 6.3 Unit tests verifying guesses for sample workbooks.
 

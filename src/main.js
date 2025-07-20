@@ -5,6 +5,7 @@ import FileInput from './components/FileInput.js';
 import SheetPicker from './components/SheetPicker.js';
 import SchemaInput from './components/SchemaInput.js';
 import { loadWorkbookFile } from './utils/workbookLoader.js';
+import './autoDetector.js';
 
 console.log('Sheet-to-JSON Mapper loaded');
 
