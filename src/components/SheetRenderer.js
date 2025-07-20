@@ -1,4 +1,5 @@
 import { store } from '../store.js';
+import { colourForField } from '../utils/color.js';
 
 /**
  * SheetRenderer component converts the currently active worksheet data array
@@ -14,7 +15,9 @@ export default class SheetRenderer {
     this.parent.appendChild(this.table);
 
     this._onStoreChange = this._onStoreChange.bind(this);
+    this._onStoreMappingChange = this._onStoreMappingChange.bind(this);
     this.unsubscribe = store.subscribe(this._onStoreChange);
+    this.unsubscribeMapping = store.subscribe(this._onStoreMappingChange);
   }
 
   _onStoreChange(newState, prevState) {
@@ -23,6 +26,37 @@ export default class SheetRenderer {
     if (newState.workbook !== prevWb || (newState.workbook && prevWb && newState.workbook.activeSheet !== prevWb.activeSheet)) {
       this.render(newState.workbook);
     }
+  }
+
+  _onStoreMappingChange(newState, prevState) {
+    if (newState.mapping !== (prevState && prevState.mapping)) {
+      this._applyHighlights(newState);
+    }
+  }
+
+  _applyHighlights(state) {
+    // Reset previous highlights
+    const highlighted = this.table.querySelectorAll('[data-highlight]');
+    highlighted.forEach((el) => {
+      el.style.outline = '';
+      el.removeAttribute('data-highlight');
+    });
+
+    const { workbook, mapping } = state;
+    if (!workbook || !mapping) return;
+
+    const sheetName = workbook.activeSheet;
+
+    Object.entries(mapping).forEach(([field, addresses]) => {
+      addresses.forEach(({ sheet, row, col }) => {
+        if (sheet !== sheetName) return;
+        const td = this.table.querySelector(`td[data-r="${row}"][data-c="${col}"]`);
+        if (td) {
+          td.style.outline = `2px solid ${colourForField(field)}`;
+          td.setAttribute('data-highlight', '');
+        }
+      });
+    });
   }
 
   render(workbook) {
@@ -82,6 +116,8 @@ export default class SheetRenderer {
         const td = document.createElement('td');
         const cellValue = row[c];
         td.textContent = cellValue === null || cellValue === undefined ? '' : String(cellValue);
+        td.dataset.r = r;
+        td.dataset.c = c;
 
         if (lookup) {
           if (lookup.rowspan > 1) td.rowSpan = lookup.rowspan;
@@ -97,10 +133,14 @@ export default class SheetRenderer {
     }
 
     this.table.appendChild(fragment);
+
+    // Apply highlights after DOM built
+    this._applyHighlights(store.getState());
   }
 
   destroy() {
     this.unsubscribe && this.unsubscribe();
+    this.unsubscribeMapping && this.unsubscribeMapping();
     if (this.table.parentNode) this.table.parentNode.removeChild(this.table);
   }
 }

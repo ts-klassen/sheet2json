@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { getSchemaFields } from '../utils/schemaUtils.js';
+import { colourForField } from '../utils/color.js';
 
 /**
  * SchemaInput component allows users to paste or upload a JSON schema and
@@ -47,16 +48,6 @@ export default class SchemaInput {
     this.fileInput.addEventListener('change', this._onFileChange);
   }
 
-  /**
-   * Generate a deterministic colour for a field name using HSL palette.
-   */
-  _colourForField(name) {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 60%, 70%)`;
-  }
-
   _renderFields(fields) {
     this.sidebar.innerHTML = '';
     fields.forEach((field) => {
@@ -69,7 +60,7 @@ export default class SchemaInput {
       swatch.style.display = 'inline-block';
       swatch.style.width = '1em';
       swatch.style.height = '1em';
-      swatch.style.backgroundColor = this._colourForField(field);
+      swatch.style.backgroundColor = colourForField(field);
       swatch.style.marginRight = '0.5em';
 
       const text = document.createElement('span');
