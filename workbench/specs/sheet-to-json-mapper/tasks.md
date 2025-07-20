@@ -36,7 +36,7 @@
   - [x] 6.3 Unit tests verifying guesses for sample workbooks.
 
 - [ ] **7. Interactive Mapping UI** *(Req 5.1 – 5.3)*  
-  - [ ] 7.1 Implement drag source logic in `MappingPanel`.  
+  - [x] 7.1 Implement drag source logic in `MappingPanel`.  
   - [ ] 7.2 Implement drop target logic in `SheetRenderer` overlay layer.  
   - [ ] 7.3 Support multi-cell selection per field -> mapping array.  
   - [ ] 7.4 Visual feedback for unmapped fields.  

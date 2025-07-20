@@ -4,6 +4,7 @@ import { store } from './store.js';
 import FileInput from './components/FileInput.js';
 import SheetPicker from './components/SheetPicker.js';
 import SchemaInput from './components/SchemaInput.js';
+import MappingPanel from './components/MappingPanel.js';
 import { loadWorkbookFile } from './utils/workbookLoader.js';
 import './autoDetector.js';
 
@@ -31,3 +32,4 @@ new FileInput({
 
 new SheetPicker({ parent: appEl });
 new SchemaInput({ parent: appEl });
+new MappingPanel({ parent: appEl });
