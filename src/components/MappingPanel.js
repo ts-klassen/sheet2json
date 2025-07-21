@@ -39,6 +39,11 @@ export default class MappingPanel {
     Object.keys(schema.properties).forEach((field, idx) => {
       const li = document.createElement('li');
       li.dataset.field = field;
+      // Make the element focusable so Draggable's KeyboardSensor can pick it
+      // up via the standard space/enter key interaction once the sensor
+      // receives focus events.  tabindex="0" ensures the item participates in
+      // the natural tab order without requiring any additional ARIA roles.
+      li.tabIndex = 0;
       li.style.margin = '4px 0';
       li.style.cursor = 'grab';
       li.style.userSelect = 'none';

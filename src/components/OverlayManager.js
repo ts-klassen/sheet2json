@@ -102,6 +102,13 @@ export default class OverlayManager {
 
         overlay.textContent = field;
 
+        // Enable keyboard accessibility so users can pick up and move the
+        // overlay via Draggable's KeyboardSensor.  Adding tabindex="0" places
+        // the element in the natural tab order which in turn allows the user
+        // to activate the drag with the space/enter key as per WCAG
+        // guidelines.
+        overlay.tabIndex = 0;
+
         // Attempt to position the overlay on top of the target cell.  We look
         // up the <td> using the same data-r / data-c attributes employed by
         // SheetRenderer highlights.  If the cell is not found we skip – e.g.
