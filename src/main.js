@@ -11,7 +11,7 @@ import SheetRenderer from './components/SheetRenderer.js';
 import OverlayManager from './components/OverlayManager.js';
 import { saveTemplate, loadTemplate } from './utils/templateManager.js';
 import { buildJson } from './utils/exporter.js';
-import { shiftMappingDown } from './utils/mappingUtils.js';
+import { advanceCurrentField } from './utils/mappingUtils.js';
 import ExportDialog from './components/ExportDialog.js';
 import '../styles/styles.css';
 
@@ -97,10 +97,19 @@ controls.appendChild(
   })
 );
 
-// Next Row button
+// "Next" button – finalise current field mapping & advance focus
 controls.appendChild(
-  makeButton('Next Row', () => {
-    shiftMappingDown();
+  makeButton('Next', () => {
+    try {
+      const success = advanceCurrentField();
+      if (!success) {
+        // eslint-disable-next-line no-alert
+        alert('Please map at least one cell for the current field before continuing.');
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(err.message);
+    }
   })
 );
 
