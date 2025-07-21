@@ -50,7 +50,7 @@
   - [x] 9.3. `next-workflow.test.js` – Next button snapshot & index advance (Req 2).  
   - [x] 9.4. `keyboard-drag.test.js` – simulate keyboard sensor drag (Req 4).
 
-- [ ] **10. Integration/E2E tests (Cypress)**  
+- [x] **10. Integration/E2E tests (Cypress)**  
   - Simulate drag → drop → Next flow and validate exporter output (Req 1–3).  
   - Mobile viewport long-press drag scenario (Req 4).
 
