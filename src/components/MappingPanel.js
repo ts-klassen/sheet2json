@@ -23,19 +23,7 @@ export default class MappingPanel {
     // boundaries so testers can confirm that dragging is enabled only for the
     // intended list. These strings do not affect functionality or automated
     // tests.
-    this.markerStart = document.createElement('div');
-    this.markerStart.textContent = 'start drag FIELD list';
-    this.markerStart.style.fontStyle = 'italic';
-    this.markerStart.style.color = '#888';
-
-    this.markerEnd = document.createElement('div');
-    this.markerEnd.textContent = 'end drag FIELD list';
-    this.markerEnd.style.fontStyle = 'italic';
-    this.markerEnd.style.color = '#888';
-
-    // Insert markers before and after the UL.
-    this.container.insertBefore(this.markerStart, this.ul);
-    this.container.appendChild(this.markerEnd);
+    // End marker removed per request – no visual markers remain.
     this.parent.appendChild(this.container);
 
     this._onStoreChange = this._onStoreChange.bind(this);
