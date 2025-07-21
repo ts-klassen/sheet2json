@@ -11,7 +11,7 @@
   - Expose singleton with custom events `FIELD_DROPPED` & `OVERLAY_MOVED`.  
   - Unit-test with synthetic Draggable events.
 
-- [ ] **3. Refactor `src/components/MappingPanel.js` to use Draggable sources**  
+- [x] **3. Refactor `src/components/MappingPanel.js` to use Draggable sources**  
   *Requirements 1, 4, 5*  
   - Replace native `dragstart` handler with Draggable initialisation.  
   - Add focus/active styling linked to `store.currentFieldIndex`.  
