@@ -15,6 +15,10 @@ export default class SheetRenderer {
     this.table.style.display = 'none';
     this.parent.appendChild(this.table);
 
+    // Lookup table that maps "row:col" → <td>.  It is rebuilt every time the
+    // worksheet is rendered (i.e. when workbook or activeSheet changes).
+    this._cellLookup = new Map();
+
     this._onStoreChange = this._onStoreChange.bind(this);
     this._onStoreMappingChange = this._onStoreMappingChange.bind(this);
     this.unsubscribe = store.subscribe(this._onStoreChange);
@@ -56,28 +60,52 @@ export default class SheetRenderer {
   }
 
   _applyHighlights(state) {
-    // Reset previous highlights
-    const highlighted = this.table.querySelectorAll('[data-highlight]');
-    highlighted.forEach((el) => {
-      el.style.outline = '';
-      el.removeAttribute('data-highlight');
-    });
+    // Lazily create a cache of currently highlighted cell keys so we can do
+    // incremental updates instead of wiping and re-painting the entire table
+    // on every mapping mutation.  A *key* is the tuple "row:col" for the
+    // active sheet – we ignore other sheets because they are not rendered.
+    if (!this._highlightedKeys) {
+      this._highlightedKeys = new Set();
+    }
 
     const { workbook, mapping } = state;
     if (!workbook || !mapping) return;
 
     const sheetName = workbook.activeSheet;
 
+    // Build a set of keys that *should* be highlighted after this update.
+    const nextKeys = new Set();
+
     Object.entries(mapping).forEach(([field, addresses]) => {
       addresses.forEach(({ sheet, row, col }) => {
         if (sheet !== sheetName) return;
-        const td = this.table.querySelector(`td[data-r="${row}"][data-c="${col}"]`);
-        if (td) {
-          td.style.outline = `2px solid ${colourForField(field)}`;
-          td.setAttribute('data-highlight', '');
+        const key = `${row}:${col}`;
+        nextKeys.add(key);
+
+        // If this key is new we have to apply the outline now.
+        if (!this._highlightedKeys.has(key)) {
+          const td = this._cellLookup.get(key);
+          if (td) {
+            td.style.outline = `2px solid ${colourForField(field)}`;
+            td.setAttribute('data-highlight', '');
+          }
         }
       });
     });
+
+    // Remove outlines for keys that are no longer present.
+    this._highlightedKeys.forEach((key) => {
+      if (!nextKeys.has(key)) {
+        const td = this._cellLookup.get(key);
+        if (td) {
+          td.style.outline = '';
+          td.removeAttribute('data-highlight');
+        }
+      }
+    });
+
+    // Replace cache with new set for next diff.
+    this._highlightedKeys = nextKeys;
   }
 
   render(workbook) {
@@ -112,6 +140,10 @@ export default class SheetRenderer {
 
     const fragment = document.createDocumentFragment();
 
+    // Reset cell lookup before rebuilding the table so stale references are
+    // removed and memory does not leak across renders.
+    this._cellLookup.clear();
+
     for (let r = 0; r < data.length; r++) {
       const row = data[r] || [];
       const tr = document.createElement('tr');
@@ -139,6 +171,9 @@ export default class SheetRenderer {
         td.textContent = cellValue === null || cellValue === undefined ? '' : String(cellValue);
         td.dataset.r = r;
         td.dataset.c = c;
+
+        // Store reference for fast lookup during highlight updates.
+        this._cellLookup.set(`${r}:${c}`, td);
 
         if (lookup) {
           if (lookup.rowspan > 1) td.rowSpan = lookup.rowspan;
