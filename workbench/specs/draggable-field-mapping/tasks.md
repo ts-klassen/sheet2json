@@ -29,7 +29,7 @@
   - Register each overlay as a Draggable source sharing the same Dropzone.  
   - On move completion, mutate the corresponding address in `store.mapping`.
 
-- [ ] **6. Extend global store (`src/store.js`)**  
+- [x] **6. Extend global store (`src/store.js`)**  
   *Requirements 2, 6*  
   - Add `currentFieldIndex` with default `0`.  
   - Ensure deep-freeze helper covers the new key.
