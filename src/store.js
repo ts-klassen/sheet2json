@@ -5,6 +5,8 @@ const initialState = {
   workbook: null, // Parsed workbook data
   schema: null, // Parsed JSON schema
   mapping: {}, // Field name -> CellAddress[]
+  // Tracks which schema field is currently being mapped in the "Next" workflow
+  currentFieldIndex: 0,
   errors: [], // Array of error objects / strings
   records: [] // Array of mapping snapshots (for multi-record sheets)
 };
