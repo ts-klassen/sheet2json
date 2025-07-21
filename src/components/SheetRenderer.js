@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { colourForField } from '../utils/color.js';
+import DraggableController, { FIELD_DROPPED } from '../dnd/DraggableController.js';
 
 /**
  * SheetRenderer component converts the currently active worksheet data array
@@ -18,6 +19,20 @@ export default class SheetRenderer {
     this._onStoreMappingChange = this._onStoreMappingChange.bind(this);
     this.unsubscribe = store.subscribe(this._onStoreChange);
     this.unsubscribeMapping = store.subscribe(this._onStoreMappingChange);
+
+    // Draggable Dropzone integration
+    this._onFieldDropped = this._onFieldDropped.bind(this);
+    DraggableController.addEventListener(FIELD_DROPPED, this._onFieldDropped);
+
+    // Inform the controller about the drop target root so it can wire the real
+    // Dropzone implementation at a later stage.  The method is idempotent –
+    // see DraggableController for details.
+    try {
+      DraggableController.init({ dropRoot: this.table });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('DraggableController initialisation (dropRoot) failed', err);
+    }
 
     // Drag-and-drop handlers for interactive mapping
     this._onDragOver = this._onDragOver.bind(this);
@@ -149,7 +164,43 @@ export default class SheetRenderer {
     this.unsubscribeMapping && this.unsubscribeMapping();
     this.table.removeEventListener('dragover', this._onDragOver);
     this.table.removeEventListener('drop', this._onDrop);
+
+    DraggableController.removeEventListener(FIELD_DROPPED, this._onFieldDropped);
     if (this.table.parentNode) this.table.parentNode.removeChild(this.table);
+  }
+
+  /**
+   * Handler for DraggableController FIELD_DROPPED custom events.  Expects the
+   * event detail to contain at least `{ field, row, col }` and optionally
+   * `sheet`.  If `sheet` is omitted we default to the currently active sheet
+   * from the store.
+   *
+   * The method mirrors the logic in the legacy HTML5 `_onDrop` handler so that
+   * both code paths yield identical `store.mapping` shapes.
+   */
+  _onFieldDropped(e) {
+    if (!e || !e.detail) return;
+    const { field, row, col, sheet: sheetFromDetail } = e.detail;
+
+    if (!field || row == null || col == null) return;
+
+    const state = store.getState();
+    const sheet = sheetFromDetail || state.workbook?.activeSheet;
+    if (!sheet) return;
+
+    const newAddr = { sheet, row, col };
+    const mapping = { ...state.mapping };
+    const existing = mapping[field] ? [...mapping[field]] : [];
+
+    // Avoid duplicate addresses for the same field -> cell combination.
+    const duplicate = existing.some(
+      (addr) => addr.sheet === sheet && addr.row === row && addr.col === col
+    );
+    if (duplicate) return;
+
+    existing.push(newAddr);
+    mapping[field] = existing;
+    store.set('mapping', mapping);
   }
 
   _onDragOver(e) {

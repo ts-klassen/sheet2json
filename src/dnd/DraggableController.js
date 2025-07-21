@@ -90,16 +90,34 @@ class DraggableController extends MiniEventTarget {
    * The method is currently a no-op – it merely guards against multiple
    * invocations so subsequent tasks can extend it safely.
    */
+  /**
+   * Bootstrap or augment the controller with DOM roots that will later be
+   * passed to the real Shopify Draggable constructors.  The method is
+   * intentionally idempotent – it can be invoked by individual components in
+   * any order.  Subsequent calls merge the newly supplied options with the
+   * already stored ones so that the very first component does not have to
+   * know every root element in advance.
+   */
   init({ fieldsRoot, overlaysRoot, dropRoot } = {}) {
-    if (this._initialised) return;
+    // Lazily create the refs holder
+    this._refs = { ...(this._refs || {}) };
+
+    // Merge any newly provided refs so later calls can contribute additional
+    // root elements without resetting the controller.
+    if (fieldsRoot) this._refs.fieldsRoot = fieldsRoot;
+    if (overlaysRoot) this._refs.overlaysRoot = overlaysRoot;
+    if (dropRoot) this._refs.dropRoot = dropRoot;
 
     // We purposely postpone importing @shopify/draggable until a later task
     // because the package manipulates the real DOM API which is problematic in
     // the JSDOM environment used by Jest.  The import will be added when we
     // switch MappingPanel and SheetRenderer over to the new drag logic.
 
-    this._initialised = true;
-    this._refs = { fieldsRoot, overlaysRoot, dropRoot };
+    // Mark initialisation flag once – the expensive Draggable wiring will be
+    // performed only the first time.  Subsequent calls simply merge refs.
+    if (!this._initialised) {
+      this._initialised = true;
+    }
   }
 
   /* ----------------------------------------------------------------------- */
