@@ -44,7 +44,7 @@
   - Enable `KeyboardSensor` in DraggableController and add `tabindex="0"` to draggable list items & overlays.  
   - Verify touch sensor works on mobile emulator.
 
-- [ ] **9. Unit tests (Jest)**  
+- [x] **9. Unit tests (Jest)**  
   - [x] 9.1. `draggable-field-drop.test.js` – field drop updates mapping (Req 1).  
   - [x] 9.2. `overlay-move.test.js` – overlay reposition updates mapping (Req 3).  
   - [x] 9.3. `next-workflow.test.js` – Next button snapshot & index advance (Req 2).  
