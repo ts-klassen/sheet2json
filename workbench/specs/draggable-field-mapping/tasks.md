@@ -54,7 +54,7 @@
   - Simulate drag → drop → Next flow and validate exporter output (Req 1–3).  
   - Mobile viewport long-press drag scenario (Req 4).
 
-- [ ] **11. Performance test update**  
+- [x] **11. Performance test update**  
   *Requirement 7*  
   - Extend `tests/performance.test.js` to measure 100 drag cycles (<200 ms scripting budget).
 
