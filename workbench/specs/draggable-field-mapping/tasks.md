@@ -45,7 +45,7 @@
   - Verify touch sensor works on mobile emulator.
 
 - [ ] **9. Unit tests (Jest)**  
-  - [ ] 9.1. `draggable-field-drop.test.js` – field drop updates mapping (Req 1).  
+  - [x] 9.1. `draggable-field-drop.test.js` – field drop updates mapping (Req 1).  
   - [ ] 9.2. `overlay-move.test.js` – overlay reposition updates mapping (Req 3).  
   - [ ] 9.3. `next-workflow.test.js` – Next button snapshot & index advance (Req 2).  
   - [ ] 9.4. `keyboard-drag.test.js` – simulate keyboard sensor drag (Req 4).
