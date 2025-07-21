@@ -58,6 +58,6 @@
   *Requirement 7*  
   - Extend `tests/performance.test.js` to measure 100 drag cycles (<200 ms scripting budget).
 
-- [ ] **12. Documentation**  
+- [x] **12. Documentation**  
   *All requirements*  
   - Update `README.md` with new interaction instructions and keyboard shortcuts.
