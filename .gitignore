@@ -14,3 +14,10 @@ dist/
 
 # IDE files
 .vscode/
+
+# Jest cache & artifacts
+.jest_cache/
+jest_output.txt
+
+# Temporary files
+tmp.js

@@ -5,7 +5,7 @@
   - Modify `package.json` to add `@shopify/draggable` as a dependency.  
   - Run `npm install` and ensure Rollup bundle succeeds.
 
-- [ ] **2. Create `src/dnd/DraggableController.js`**  
+- [x] **2. Create `src/dnd/DraggableController.js`**  
   *Requirements 1, 3, 4*  
   - Initialise Pointer, Touch and Keyboard sensors.  
   - Expose singleton with custom events `FIELD_DROPPED` & `OVERLAY_MOVED`.  
