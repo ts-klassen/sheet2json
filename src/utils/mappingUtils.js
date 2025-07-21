@@ -43,8 +43,16 @@ export function shiftMappingDown() {
         if (typeof addr.script === 'string' && addr.script.trim()) {
           try {
             // eslint-disable-next-line no-new-func
-            const fn = new Function('row', 'col', 'sheet', 'field', 'index', addr.script);
-            const res = fn(addr.row, addr.col, addr.sheet, field, index);
+            const fn = new Function(
+              'row',
+              'col',
+              'sheet',
+              'field',
+              'index',
+              'mapping',
+              addr.script
+            );
+            const res = fn(addr.row, addr.col, addr.sheet, field, index, mapping);
 
             if (typeof res === 'number' && Number.isFinite(res)) {
               newRow += res;

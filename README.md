@@ -47,6 +47,85 @@ Double-click a coloured overlay to open its **Row Increment** dialog.  Enter an 
 
 The setting is stored per overlay and takes effect immediately.  The global behaviour mode (`shiftRow` vs `advanceField`) can still be adjusted via `store.confirmNextMode` if needed.
 
+---
+
+### Custom JavaScript mode (per-overlay power feature)
+
+If the simple Δ-row / Δ-column offsets are not flexible enough you can switch an overlay to **Custom JavaScript**.
+
+Open the overlay dialog → choose *Custom JavaScript* and enter code that returns where the overlay should move to when **Confirm & Next** is pressed.
+
+Callback signature
+
+```js
+// executed in a sandboxed Function
+function (row, col, sheet, field, index, mapping) {
+  /* your code */
+  return something;
+}
+```
+
+Parameters
+
+1. `row`, `col` – current coordinates of the overlay.
+2. `sheet`       – current sheet name (string).
+3. `field`       – JSON-schema field this overlay maps.
+4. `index`       – position in the `mapping[field]` array (0-based).
+5. `mapping`     – the **entire** mapping object (`{ [field]: CellAddress[] }`), so you can inspect where other overlays are.
+
+Return value (one of):
+
+* **Number** – interpreted as *Δ rows*.  Example: `return 5;` moves down five rows; `return -1;` moves up one row.
+* **Object** – absolute destination:
+
+  ```js
+  {
+    row: 10,   // required if you omit Δ syntax
+    col: 2,    // optional – omit to keep same column
+    sheet: 'Sheet2' // optional – omit to stay on current sheet
+  }
+  ```
+
+Examples
+
+1. **Jump to first empty row below**
+
+   ```js
+   const data = workbook.data[sheet];
+   let r = row + 1;
+   while (r < data.length && data[r][col] !== '') r++;
+   return { row: r, col };
+   ```
+
+2. **Align with the first overlay of another field**
+
+   ```js
+   // Move directly under the first "title" overlay
+   const target = mapping.title?.[0];
+   if (target) {
+     return { row: target.row + 1, col: target.col };
+   }
+   return 1; // fallback: just go one row down
+   ```
+
+3. **Snake pattern across the sheet**
+
+   ```js
+   const cols = workbook.data[sheet][row].length;
+   if (row % 2 === 0) {
+     return col + 1 < cols ? { row, col: col + 1 } : { row: row + 1, col };
+   }
+   return col - 1 >= 0 ? { row, col: col - 1 } : { row: row + 1, col };
+   ```
+
+Limitations & safety
+
+* Code runs with `new Function` in the browser context – keep it short and synchronous.
+* Returned coordinates are clamped to the sheet bounds; invalid positions are ignored.
+* Exceptions are caught and logged – if your script throws, the overlay will keep its position for that cycle.
+
+This feature is designed for advanced users who need programmatic control over the mapping workflow.
+
 If there is no mapping to confirm the button shows an alert and nothing changes.
 
 ---
