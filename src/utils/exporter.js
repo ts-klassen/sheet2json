@@ -40,6 +40,17 @@ export function buildJson() {
   return mappingToObject(mapping, workbook, schema);
 }
 
+// Expose helper on `window` for end-to-end tests so Cypress can easily obtain
+// the generated JSON without traversing the DOM.  The attachment is performed
+// only in browser contexts.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'buildJson', {
+    value: buildJson,
+    writable: false,
+    configurable: false
+  });
+}
+
 /**
  * POST JSON to provided URL using fetch. Returns Promise resolved with response JSON.
  */

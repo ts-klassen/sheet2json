@@ -152,3 +152,17 @@ class DraggableController extends MiniEventTarget {
 const singleton = new DraggableController();
 
 export default singleton;
+
+// Expose the singleton on the global object so Cypress E2E tests can access
+// it directly without having to rely on module resolution inside the browser
+// bundle.  Wrapped in a feature test to avoid polluting the global namespace
+// during Jest runs (Node environment does not provide `window`).
+if (typeof window !== 'undefined') {
+  // Non-enumerable to minimise surface area in production while still being
+  // discoverable from test code.
+  Object.defineProperty(window, 'DraggableController', {
+    value: singleton,
+    writable: false,
+    configurable: false
+  });
+}
