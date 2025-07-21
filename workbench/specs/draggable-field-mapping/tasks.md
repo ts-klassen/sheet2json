@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] **1. Add Shopify Draggable dependency**  
+- [x] **1. Add Shopify Draggable dependency**  
   *Requirement 1, 4*  
   - Modify `package.json` to add `@shopify/draggable` as a dependency.  
   - Run `npm install` and ensure Rollup bundle succeeds.
