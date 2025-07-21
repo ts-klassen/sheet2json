@@ -34,7 +34,7 @@
   - Add `currentFieldIndex` with default `0`.  
   - Ensure deep-freeze helper covers the new key.
 
-- [ ] **7. Build Next-button workflow**  
+ - [x] **7. Build Next-button workflow**  
   *Requirement 2*  
   - Create/modify control button handler in `src/main.js`.  
   - Validate current field has mapping; push deep clone into `store.records`; increment `currentFieldIndex`; update MappingPanel focus.
