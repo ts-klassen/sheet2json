@@ -7,7 +7,7 @@
  *   3. Simulating a drag-and-drop mapping by dispatching the same custom
  *      FIELD_DROPPED event used by the production code path (identical to the
  *      Pointer/Touch/Keyboard sensor callbacks)
- *   4. Hitting the "Next" button to finalise the current field
+ *   4. Hitting the "Confirm & Next" button to finalise the current field
  *   5. Asserting that the exporter returns the expected JSON payload.
  *
  * The test purposefully avoids low-level pointer events: the project replaces
@@ -16,7 +16,7 @@
  * global store and exporter.
  */
 
-describe('Field mapping → Next → Export workflow', () => {
+describe('Field mapping → Confirm & Next → Export workflow', () => {
   const workbookStub = {
     sheets: ['Sheet1'],
     activeSheet: 'Sheet1',
@@ -40,6 +40,8 @@ describe('Field mapping → Next → Export workflow', () => {
       win.__STORE__.set('schema', schemaStub);
       // Make sure mapping starts empty.
       win.__STORE__.set('mapping', {});
+      // Use legacy advanceField mode so test assertions stay the same.
+      win.__STORE__.set('confirmNextMode', 'advanceField');
 
       // Simulate a drag-and-drop from field list to cell (0,0).
       win.DraggableController.__test_emit('field', {
@@ -50,8 +52,8 @@ describe('Field mapping → Next → Export workflow', () => {
       });
     });
 
-    // Click the "Next" button to advance the workflow.
-    cy.contains('button', 'Next').click();
+    // Click the "Confirm & Next" button to advance the workflow.
+    cy.contains('button', 'Confirm & Next').click();
 
     // The exporter should now convert the snapshot in `records[0]` into a JSON
     // object with the value from Sheet1!A1 ("Alice").
@@ -91,6 +93,7 @@ describe('Mobile – touch/long-press mapping', () => {
       win.__STORE__.set('workbook', workbookStub);
       win.__STORE__.set('schema', schemaStub);
       win.__STORE__.set('mapping', {});
+      win.__STORE__.set('confirmNextMode', 'advanceField');
 
       // Simulate overlay drag – equivalent sensor path for touch.
       win.DraggableController.__test_emit('field', {
@@ -101,7 +104,7 @@ describe('Mobile – touch/long-press mapping', () => {
       });
     });
 
-    cy.contains('button', 'Next').click();
+    cy.contains('button', 'Confirm & Next').click();
 
     cy.window().then((win) => {
       const json = win.buildJson();

@@ -308,7 +308,8 @@ export default class SheetRenderer {
       );
       if (duplicate) return;
 
-      list[index] = { sheet, row, col };
+      const prev = list[index] || {};
+      list[index] = { ...prev, sheet, row, col };
       mapping[field] = list;
       store.set('mapping', mapping);
 

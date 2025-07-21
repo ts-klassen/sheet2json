@@ -9,6 +9,7 @@ const initialState = {
   currentFieldIndex: 0,
   errors: [], // Array of error objects / strings
   records: [] // Array of mapping snapshots (for multi-record sheets)
+  ,confirmNextMode: 'shiftRow' // 'shiftRow' | 'advanceField' – behaviour of Confirm & Next button
 };
 
 /**

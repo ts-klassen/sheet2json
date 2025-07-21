@@ -31,14 +31,23 @@ If the drop happens outside any cell, nothing changes – simply drag again.
 
 ---
 
-## The “Next” workflow
+## The “Confirm & Next” workflow
 
-After at least one cell has been mapped for the current field, press the **Next** button (or `Ctrl + →`).  The app will:
+After at least one cell has been mapped, press **Confirm & Next** (or `Ctrl + →`).  What happens depends on the _Confirm-&-Next mode_ held in `store.confirmNextMode`:
 
-1. Push a deep-clone snapshot of the current mapping into `store.records` (used later by the exporter), and
-2. Advance focus to the next unmapped field so you can keep dragging without reaching for the mouse panel.
+• **'shiftRow'** (default) – The mapper stores a deep-clone snapshot of the current mapping in `store.records` and then shifts every mapped cell **down by one row**.  This is the fast-lane workflow for array-root schemas where you’re building a record set row-by-row.
 
-If no cell is mapped, the button is disabled and a tooltip explains why.
+• **'advanceField'** – The legacy behaviour: the snapshot is stored and focus jumps to the next unmapped field so you can continue dragging cells for that field.
+
+Double-click a coloured overlay to open its **Row Increment** dialog.  Enter an integer (can be positive, zero, or negative):
+
+• `1`, `2`, … – move down by that many rows.  
+• `0` – stay on the same row (still snapshots each time).  
+• `-1`, `-2`, … – move up.
+
+The setting is stored per overlay and takes effect immediately.  The global behaviour mode (`shiftRow` vs `advanceField`) can still be adjusted via `store.confirmNextMode` if needed.
+
+If there is no mapping to confirm the button shows an alert and nothing changes.
 
 ---
 
@@ -72,7 +81,7 @@ Although the interaction layer changed, the underlying structures remain **uncha
 
 ```js
 store.mapping  // { [field: string]: CellAddress[] }
-store.records  // CellAddress[][] – snapshots created by “Next”
+store.records  // CellAddress[][] – snapshots created by “Confirm & Next”
 ```
 
 Templates saved **before** the refactor still load without any modifications (see `Requirement 6`).

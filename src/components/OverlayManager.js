@@ -13,6 +13,7 @@ import { colourForField } from '../utils/color.js';
 import DraggableController, {
   OVERLAY_MOVED
 } from '../dnd/DraggableController.js';
+import OverlayConfigDialog from './OverlayConfigDialog.js';
 
 export default class OverlayManager {
   /**
@@ -102,6 +103,12 @@ export default class OverlayManager {
 
         overlay.textContent = field;
 
+        // Double-click opens per-overlay configuration dialog
+        overlay.addEventListener('dblclick', () => {
+          const idx = Number(overlay.dataset.index);
+          new OverlayConfigDialog(field, idx);
+        });
+
         // Enable keyboard accessibility so users can pick up and move the
         // overlay via Draggable's KeyboardSensor.  Adding tabindex="0" places
         // the element in the natural tab order which in turn allows the user
@@ -190,7 +197,8 @@ export default class OverlayManager {
     const list = mapping[field] ? [...mapping[field]] : [];
     if (index < 0 || index >= list.length) return;
 
-    list[index] = { sheet, row, col };
+    const prev = list[index] || {};
+    list[index] = { ...prev, sheet, row, col };
     mapping[field] = list;
     store.set('mapping', mapping);
   }

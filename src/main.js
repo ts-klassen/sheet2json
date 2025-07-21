@@ -11,7 +11,7 @@ import SheetRenderer from './components/SheetRenderer.js';
 import OverlayManager from './components/OverlayManager.js';
 import { saveTemplate, loadTemplate } from './utils/templateManager.js';
 import { buildJson } from './utils/exporter.js';
-import { advanceCurrentField } from './utils/mappingUtils.js';
+import { advanceCurrentField, shiftMappingDown } from './utils/mappingUtils.js';
 import ExportDialog from './components/ExportDialog.js';
 import '../styles/styles.css';
 
@@ -97,21 +97,34 @@ controls.appendChild(
   })
 );
 
-// "Next" button – finalise current field mapping & advance focus
-controls.appendChild(
-  makeButton('Next', () => {
+// "Confirm & Next" button – finalise current field mapping & advance focus
+const confirmNextBtn = makeButton('Confirm & Next', () => {
     try {
-      const success = advanceCurrentField();
-      if (!success) {
-        // eslint-disable-next-line no-alert
-        alert('Please map at least one cell for the current field before continuing.');
+      const { confirmNextMode } = store.getState();
+
+      if (confirmNextMode === 'advanceField') {
+        const success = advanceCurrentField();
+        if (!success) {
+          // eslint-disable-next-line no-alert
+          alert('Please map at least one cell for the current field before continuing.');
+        }
+      } else {
+        // Default & "shiftRow" path – always snapshot & shift mapping down.
+        const mapping = store.getState().mapping;
+        if (!mapping || Object.keys(mapping).length === 0) {
+          // eslint-disable-next-line no-alert
+          alert('Nothing to confirm – map at least one cell before continuing.');
+          return;
+        }
+        shiftMappingDown();
       }
     } catch (err) {
       // eslint-disable-next-line no-alert
       alert(err.message);
     }
-  })
-);
+  });
+
+controls.appendChild(confirmNextBtn);
 
 appEl.appendChild(controls);
 

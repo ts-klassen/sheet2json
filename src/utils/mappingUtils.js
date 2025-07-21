@@ -29,13 +29,49 @@ export function shiftMappingDown() {
     store.set('records', [...records, snapshot]);
   }
 
-  const maxRows = workbook.data[workbook.activeSheet]?.length || 0;
+  const sheetData = workbook.data[workbook.activeSheet] || [];
+  const maxRows = sheetData.length;
 
   const newMapping = {};
   Object.entries(mapping).forEach(([field, addresses]) => {
     const shifted = addresses
-      .map((addr) => ({ ...addr, row: addr.row + 1 }))
-      .filter((addr) => addr.row < maxRows);
+      .map((addr, index) => {
+        // Support custom script or numeric step.
+        let newRow = addr.row;
+        let newCol = addr.col;
+
+        if (typeof addr.script === 'string' && addr.script.trim()) {
+          try {
+            // eslint-disable-next-line no-new-func
+            const fn = new Function('row', 'col', 'sheet', 'field', 'index', addr.script);
+            const res = fn(addr.row, addr.col, addr.sheet, field, index);
+
+            if (typeof res === 'number' && Number.isFinite(res)) {
+              newRow += res;
+            } else if (res && typeof res === 'object') {
+              if (Number.isFinite(res.row)) newRow = res.row;
+              if (Number.isFinite(res.col)) newCol = res.col;
+            }
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Custom script error:', err);
+            // fall back to step or no move
+          }
+        } else {
+          const dy = Number.isFinite(addr.dy) ? addr.dy : Number.isFinite(addr.step) ? addr.step : 1;
+          const dx = Number.isFinite(addr.dx) ? addr.dx : 0;
+          newRow += dy;
+          newCol += dx;
+        }
+
+        return { ...addr, row: newRow, col: newCol };
+      })
+      .filter((addr) => {
+        if (addr.row < 0 || addr.row >= maxRows) return false;
+        const rowArr = sheetData[addr.row] || [];
+        if (addr.col < 0 || addr.col >= rowArr.length) return false;
+        return true;
+      });
     if (shifted.length) newMapping[field] = shifted;
   });
 
