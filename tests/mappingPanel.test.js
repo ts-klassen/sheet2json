@@ -30,8 +30,9 @@ describe('MappingPanel – Draggable sources', () => {
     const items = container.querySelectorAll('li[data-field]');
     expect(items.length).toBe(2);
 
-    // Items should no longer use native HTML draggable attribute – library handles drag.
-    items.forEach((item) => expect(item.draggable).toBe(false));
+    // Items should provide draggable attribute so native DnD works until
+    // Shopify Draggable is integrated.
+    items.forEach((item) => expect(item.draggable).toBe(true));
   });
 
   test('applies focus style to currentFieldIndex', () => {

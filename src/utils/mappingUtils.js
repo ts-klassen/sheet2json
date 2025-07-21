@@ -55,11 +55,23 @@ export function shiftMappingDown() {
 export function advanceCurrentField() {
   const { schema, mapping, records, currentFieldIndex } = store.getState();
 
-  if (!schema || !schema.properties) {
+  if (!schema || typeof schema !== 'object') {
     throw new Error('Schema is not loaded');
   }
 
-  const fieldNames = Object.keys(schema.properties);
+  // Support both object‐root schemas (schema.properties) and array‐root
+  // schemas (schema.type === 'array' with schema.items.properties).
+  /* eslint-disable prefer-destructuring */
+  const props =
+    schema.properties ||
+    (schema.type === 'array' && schema.items && schema.items.properties);
+  /* eslint-enable prefer-destructuring */
+
+  if (!props || typeof props !== 'object') {
+    throw new Error('Schema is not loaded');
+  }
+
+  const fieldNames = Object.keys(props);
   const currentField = fieldNames[currentFieldIndex];
 
   if (!currentField) {

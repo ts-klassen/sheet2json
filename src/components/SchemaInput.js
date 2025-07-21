@@ -56,20 +56,50 @@ export default class SchemaInput {
       li.style.alignItems = 'center';
       li.style.marginBottom = '4px';
 
+      // Make the preview field draggable so users can map directly from this
+      // schema sidebar if they prefer.  Use the same MIME payload as
+      // MappingPanel so SheetRenderer accepts the drop.
+      li.draggable = true;
+      li.addEventListener('dragstart', (ev) => {
+        try {
+          ev.dataTransfer.setData('application/x-schema-field', field);
+          ev.dataTransfer.setData('text/plain', field);
+          ev.dataTransfer.effectAllowed = 'copy';
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('dragstart failed on schema sidebar item', err);
+        }
+      });
+
       const swatch = document.createElement('span');
       swatch.style.display = 'inline-block';
       swatch.style.width = '1em';
       swatch.style.height = '1em';
       swatch.style.backgroundColor = colourForField(field);
       swatch.style.marginRight = '0.5em';
+      swatch.style.pointerEvents = 'none';
 
       const text = document.createElement('span');
       text.textContent = field;
+      text.style.pointerEvents = 'none';
 
       li.appendChild(swatch);
       li.appendChild(text);
       this.sidebar.appendChild(li);
     });
+
+    // Add visual markers as requested for manual QA.
+    const startMarker = document.createElement('div');
+    startMarker.textContent = 'start drag SCHEMA list';
+    startMarker.style.fontStyle = 'italic';
+    startMarker.style.color = '#888';
+    const endMarker = document.createElement('div');
+    endMarker.textContent = 'end drag SCHEMA list';
+    endMarker.style.fontStyle = 'italic';
+    endMarker.style.color = '#888';
+
+    this.sidebar.insertBefore(startMarker, this.sidebar.firstChild);
+    this.sidebar.appendChild(endMarker);
   }
 
   _handleSchemaText(text) {

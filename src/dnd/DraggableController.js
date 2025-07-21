@@ -83,6 +83,13 @@ class DraggableController extends MiniEventTarget {
   }
 
   /**
+   * Return true when Shopify Draggable has been successfully wired.
+   */
+  isWired() {
+    return !!this._wired;
+  }
+
+  /**
    * One-time bootstrap to wire draggable sources & drop targets.  The signature
    * mirrors what we plan to pass to `new Draggable.Draggable()` and
    * `new Draggable.Dropzone()` once the heavy lifting is implemented.
@@ -117,6 +124,96 @@ class DraggableController extends MiniEventTarget {
     // performed only the first time.  Subsequent calls simply merge refs.
     if (!this._initialised) {
       this._initialised = true;
+
+      // Attempt to wire Shopify Draggable in real browser contexts. We avoid
+      // doing so under Jest/Node because the library touches DOM APIs that do
+      // not exist in JSDOM and would therefore crash unit tests.
+      if (typeof window !== 'undefined') {
+        // Defer wiring to the next micro-task so all components have had a
+        // chance to register their roots – this guarantees we know both
+        // fieldsRoot *and* dropRoot before instantiating the library.
+        Promise.resolve().then(() => {
+          this._tryWireDraggable();
+        });
+      }
+    }
+  }
+
+  /* --------------------------------------------------------------------- */
+  /* Private – wire Shopify Draggable                                       */
+  /* --------------------------------------------------------------------- */
+
+  async _tryWireDraggable() {
+    if (this._wired) return;
+
+    // Ensure we have the minimum required refs.
+    if (!this._refs || !this._refs.fieldsRoot || !this._refs.dropRoot) {
+      return; // Not enough information yet – will try again on next init()
+    }
+
+    try {
+      // Avoid build-time module resolution by using variable for the spec so
+      // dev-servers will not attempt to statically resolve when the package
+      // is absent (e.g. in CI or when working offline).  At runtime the
+      // `import()` will still attempt to load the real library from
+      // node_modules; failure is caught below and a native-DnD fallback is
+      // used.
+      const spec = '@shopify/draggable';
+      const mod = await import(spec);
+      const { Draggable, Plugins } = mod;
+
+      if (!Draggable) return; // Defensive – unexpected build shape
+
+      // ------------------------------------------------------------------
+      // Draggable instance for schema field list (drag sources)
+      // ------------------------------------------------------------------
+
+      this._fieldDraggable = new Draggable(this._refs.fieldsRoot, {
+        draggable: 'li',
+        delay: 0,
+        plugins: [Plugins.PointerSensor, Plugins.TouchSensor, Plugins.KeyboardSensor, Plugins.Mirror],
+        mirror: {
+          constrainDimensions: true
+        }
+      });
+
+      // ------------------------------------------------------------------
+      // Event routing – when drag stops we determine the <td> under cursor
+      // and, if found, emit our high-level FIELD_DROPPED custom event so that
+      // SheetRenderer updates the mapping.
+      // ------------------------------------------------------------------
+
+      this._fieldDraggable.on('drag:stop', (evt) => {
+        const { source, sensorEvent } = evt;
+        if (!source || !sensorEvent) return;
+
+        // Translate sensorEvent coordinates to element under pointer.
+        const clientX = sensorEvent.clientX;
+        const clientY = sensorEvent.clientY;
+        const el = document.elementFromPoint(clientX, clientY);
+        if (!el) return;
+        const td = el.closest('td[data-r][data-c]');
+        if (!td || !this._refs.dropRoot.contains(td)) return;
+
+        // Extract address.
+        const row = parseInt(td.dataset.r, 10);
+        const col = parseInt(td.dataset.c, 10);
+        if (Number.isNaN(row) || Number.isNaN(col)) return;
+
+        const field = source.dataset.field;
+        if (!field) return;
+
+        this._emitFieldDropped({ field, row, col });
+      });
+
+      // ------------------------------------------------------------------
+      // TODO: Overlay draggable wiring will be added later.
+      // ------------------------------------------------------------------
+
+      this._wired = true;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Shopify Draggable unavailable – falling back to native DnD', err);
     }
   }
 

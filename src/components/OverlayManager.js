@@ -131,6 +131,37 @@ export default class OverlayManager {
         // least drag the overlay even before the full integration is done.
         overlay.draggable = true;
 
+        // ------------------------------------------------------------------
+        // Native HTML5 drag-and-drop (temporary until Shopify Draggable is
+        // wired in).  During dragstart we serialise the field name and the
+        // address index so SheetRenderer's generic drop handler can
+        // distinguish an overlay-move operation from an initial
+        // field-drop.
+        // ------------------------------------------------------------------
+
+        overlay.addEventListener('dragstart', (ev) => {
+          try {
+            const payload = {
+              field,
+              index,
+              // Including the origin row/col helps debug but is not required
+              // for the drop logic.
+              originRow: addr.row,
+              originCol: addr.col
+            };
+            ev.dataTransfer.setData(
+              'application/x-overlay-move',
+              JSON.stringify(payload)
+            );
+            // Indicate move semantics so the drop target can present the
+            // correct cursor.
+            ev.dataTransfer.effectAllowed = 'move';
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('overlay dragstart serialisation failed', err);
+          }
+        });
+
         this.container.appendChild(overlay);
       });
     });

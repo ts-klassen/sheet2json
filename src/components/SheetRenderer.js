@@ -240,15 +240,102 @@ export default class SheetRenderer {
 
   _onDragOver(e) {
     // Allow drop by preventing default
-    if (e.dataTransfer && e.dataTransfer.types.includes('text/plain')) {
+    if (!e.dataTransfer) return;
+
+    const types = Array.from(e.dataTransfer.types || []);
+
+    // Many browsers strip custom MIME types during dragover, leaving only
+    // "text/plain" and "text/uri-list". Therefore, we allow text/plain here
+    // and rely on _onDrop to perform strict validation (field must exist in
+    // the loaded schema).
+    if (
+      types.includes('application/x-schema-field') ||
+      types.includes('application/x-overlay-move') ||
+      types.includes('text/plain')
+    ) {
       e.preventDefault();
+      // Convey correct cursor when moving an overlay.
+      if (types.includes('application/x-overlay-move')) {
+        e.dataTransfer.dropEffect = 'move';
+      }
     }
   }
 
   _onDrop(e) {
     e.preventDefault();
-    const field = e.dataTransfer.getData('text/plain');
+    if (!e.dataTransfer) return;
+
+    const overlayPayloadRaw = e.dataTransfer.getData('application/x-overlay-move');
+
+    if (overlayPayloadRaw) {
+      // ---------------------------------------------------------------
+      // Overlay repositioning workflow (Requirement 3)
+      // ---------------------------------------------------------------
+      let payload;
+      try {
+        payload = JSON.parse(overlayPayloadRaw);
+      } catch {
+        // Malformed payload – ignore.
+        return;
+      }
+
+      const { field, index } = payload || {};
+      if (!field || index == null) return;
+
+      const td = e.target.closest('td');
+      if (!td) return;
+      const row = parseInt(td.dataset.r, 10);
+      const col = parseInt(td.dataset.c, 10);
+      if (Number.isNaN(row) || Number.isNaN(col)) return;
+
+      const state = store.getState();
+      const sheet = state.workbook?.activeSheet;
+      if (!sheet) return;
+
+      const mapping = { ...state.mapping };
+      const list = mapping[field] ? [...mapping[field]] : [];
+      if (index < 0 || index >= list.length) return;
+
+      // Avoid no-op / duplicate moves – if the addr stays identical do nothing.
+      const existingAddr = list[index];
+      if (existingAddr.sheet === sheet && existingAddr.row === row && existingAddr.col === col) {
+        return;
+      }
+
+      // Prevent duplicates for the same field.
+      const duplicate = list.some((addr, idx) =>
+        idx !== index && addr.sheet === sheet && addr.row === row && addr.col === col
+      );
+      if (duplicate) return;
+
+      list[index] = { sheet, row, col };
+      mapping[field] = list;
+      store.set('mapping', mapping);
+
+      return; // Done – handled overlay move.
+    }
+
+    // --------------------------------------------------------------------
+    // Fallback: standard field→cell mapping (Requirement 1)
+    // --------------------------------------------------------------------
+    let field = e.dataTransfer.getData('application/x-schema-field');
+    if (!field) {
+      // Fallback for browsers that strip custom MIME types during dragover –
+      // fall back to plain text *but* still validate against schema to avoid
+      // arbitrary drops.
+      field = e.dataTransfer.getData('text/plain');
+    }
+
     if (!field) return;
+
+    // Validate the field exists in the loaded schema – shields against random text.
+    const { schema } = store.getState();
+    const props =
+      schema?.properties ||
+      (schema?.type === 'array' && schema?.items && schema.items.properties);
+    if (!props || !Object.prototype.hasOwnProperty.call(props, field)) {
+      return; // Unknown field → ignore drop.
+    }
 
     const td = e.target.closest('td');
     if (!td) return;

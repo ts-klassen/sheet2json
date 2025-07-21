@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SecurityCheckQuestions",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "no": {
+        "type": "string",
+        "description": "The question number or identifier."
+      },
+      "question": {
+        "type": "string",
+        "description": "The text of the security question."
+      },
+      "notes": {
+        "type": "array",
+        "description": "Any additional instructions or clarifications for the question.",
+        "items": { "type": "string" }
+      },
+      "titles": {
+        "type": "array",
+        "description": "Relevant columns or categories from the Excel sheet that the question belongs to.",
+        "items": { "type": "string" }
+      }
+    },
+    "required": ["no", "titles", "question", "notes"]
+  }
+}

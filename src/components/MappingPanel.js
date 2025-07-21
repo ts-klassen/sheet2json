@@ -18,6 +18,24 @@ export default class MappingPanel {
     this.ul.style.padding = '0';
 
     this.container.appendChild(this.ul);
+
+    // Visual markers requested for manual QA – indicate the draggable area
+    // boundaries so testers can confirm that dragging is enabled only for the
+    // intended list. These strings do not affect functionality or automated
+    // tests.
+    this.markerStart = document.createElement('div');
+    this.markerStart.textContent = 'start drag FIELD list';
+    this.markerStart.style.fontStyle = 'italic';
+    this.markerStart.style.color = '#888';
+
+    this.markerEnd = document.createElement('div');
+    this.markerEnd.textContent = 'end drag FIELD list';
+    this.markerEnd.style.fontStyle = 'italic';
+    this.markerEnd.style.color = '#888';
+
+    // Insert markers before and after the UL.
+    this.container.insertBefore(this.markerStart, this.ul);
+    this.container.appendChild(this.markerEnd);
     this.parent.appendChild(this.container);
 
     this._onStoreChange = this._onStoreChange.bind(this);
@@ -32,11 +50,17 @@ export default class MappingPanel {
 
   _render(schema, mapping) {
     this.ul.innerHTML = '';
-    if (!schema || !schema.properties) return;
+    if (!schema) return;
+
+    const props =
+      schema.properties ||
+      (schema.type === 'array' && schema.items && schema.items.properties);
+
+    if (!props) return;
 
     const currentIndex = store.getState().currentFieldIndex ?? 0;
 
-    Object.keys(schema.properties).forEach((field, idx) => {
+    Object.keys(props).forEach((field, idx) => {
       const li = document.createElement('li');
       li.dataset.field = field;
       // Make the element focusable so Draggable's KeyboardSensor can pick it
@@ -49,10 +73,9 @@ export default class MappingPanel {
       li.style.userSelect = 'none';
       li.style.webkitUserSelect = 'none';
 
-      // Prevent text selection so drag starts reliably when using PointerSensor
-      li.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-      });
+      // Use CSS to disable text selection; avoid preventing mousedown because
+      // that blocks native HTML5 dragstart in some browsers.
+      li.style.userSelect = 'none';
 
       const swatch = document.createElement('span');
       swatch.style.display = 'inline-block';
@@ -60,12 +83,38 @@ export default class MappingPanel {
       swatch.style.height = '1em';
       swatch.style.backgroundColor = colourForField(field);
       swatch.style.marginRight = '0.5em';
+      // Ensure click/drag events bubble to <li> so the native draggable
+      // attribute on the list item captures the dragstart even when the user
+      // initiates the gesture on the colour swatch.
+      swatch.style.pointerEvents = 'none';
 
       const text = document.createElement('span');
       text.textContent = field;
+      text.style.pointerEvents = 'none';
 
       li.appendChild(swatch);
       li.appendChild(text);
+
+      // ------------------------------------------------------------------
+      // Provide a *native* HTML5 drag fallback **only** when Shopify Draggable
+      // has not been wired (e.g. package not installed). Once Draggable is
+      // active, the native attribute interferes with its PointerSensor, so we
+      // must not set it.
+      // ------------------------------------------------------------------
+
+      if (!DraggableController.isWired()) {
+        li.draggable = true;
+        li.addEventListener('dragstart', (ev) => {
+          try {
+            ev.dataTransfer.setData('application/x-schema-field', field);
+            ev.dataTransfer.setData('text/plain', field);
+            ev.dataTransfer.effectAllowed = 'copy';
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('dragstart failed on field item', err);
+          }
+        });
+      }
 
       // Show unmapped fields in bold red, mapped in normal.
       if (!mapping || !mapping[field] || mapping[field].length === 0) {

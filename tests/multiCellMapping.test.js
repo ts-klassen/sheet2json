@@ -5,7 +5,7 @@ import { store } from '../src/store.js';
 class DT {
   constructor() {
     this.data = {};
-    this.types = ['text/plain'];
+    this.types = ['application/x-schema-field'];
   }
   setData(t, v) { this.data[t] = v; }
   getData(t) { return this.data[t]; }
@@ -14,7 +14,7 @@ class DT {
 function dropOnCell(cell, field) {
   const evt = new Event('drop', { bubbles: true, cancelable: true });
   evt.dataTransfer = new DT();
-  evt.dataTransfer.setData('text/plain', field);
+  evt.dataTransfer.setData('application/x-schema-field', field);
   cell.dispatchEvent(evt);
 }
 
