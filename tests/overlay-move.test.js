@@ -62,6 +62,14 @@ describe('OVERLAY_MOVED → mapping update', () => {
     expect(mapping).toHaveProperty('title');
     expect(mapping.title).toHaveLength(1);
     expect(mapping.title[0]).toEqual({ sheet: 'Sheet1', row: 1, col: 1 });
+
+    // Original object should NOT be mutated; a new mapping object is returned
+    // (shallow compare).  This guards against accidental state mutation in
+    // OverlayManager which would break idiomatic Redux-style workflows.
+    const prevMapping = {
+      title: [{ sheet: 'Sheet1', row: 0, col: 0 }]
+    };
+    expect(mapping).not.toBe(prevMapping);
   });
 });
 
