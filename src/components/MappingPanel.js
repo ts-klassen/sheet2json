@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { colourForField } from '../utils/color.js';
+import DraggableController from '../dnd/DraggableController.js';
 
 /**
  * MappingPanel lists schema fields as draggable items so the user can drag them
@@ -33,16 +34,17 @@ export default class MappingPanel {
     this.ul.innerHTML = '';
     if (!schema || !schema.properties) return;
 
-    Object.keys(schema.properties).forEach((field) => {
+    const currentIndex = store.getState().currentFieldIndex ?? 0;
+
+    Object.keys(schema.properties).forEach((field, idx) => {
       const li = document.createElement('li');
-      li.draggable = true;
       li.dataset.field = field;
       li.style.margin = '4px 0';
       li.style.cursor = 'grab';
       li.style.userSelect = 'none';
       li.style.webkitUserSelect = 'none';
 
-      // Prevent text selection so drag starts reliably
+      // Prevent text selection so drag starts reliably when using PointerSensor
       li.addEventListener('mousedown', (e) => {
         e.preventDefault();
       });
@@ -66,13 +68,25 @@ export default class MappingPanel {
         text.style.color = 'red';
       }
 
-      li.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', field);
-        e.dataTransfer.effectAllowed = 'copy';
-      });
+      // Highlight the active/current field (focus style)
+      if (idx === currentIndex) {
+        li.style.outline = '2px solid blue';
+        li.style.outlineOffset = '2px';
+      }
+
+      // Native drag handling removed – now managed by DraggableController
 
       this.ul.appendChild(li);
     });
+
+    // (Re-)initialise draggable sources. Safe to call multiple times – the
+    // controller ignores subsequent invocations after the first.
+    try {
+      DraggableController.init({ fieldsRoot: this.ul });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('DraggableController initialisation failed', err);
+    }
   }
 
   destroy() {

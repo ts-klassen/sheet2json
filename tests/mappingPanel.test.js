@@ -1,20 +1,7 @@
 import MappingPanel from '../src/components/MappingPanel.js';
 import { store } from '../src/store.js';
 
-// JSDOM lacks DataTransfer; polyfill minimal subset for drag events.
-class MockDataTransfer {
-  constructor() {
-    this.data = {};
-  }
-  setData(type, val) {
-    this.data[type] = val;
-  }
-  getData(type) {
-    return this.data[type];
-  }
-}
-
-describe('MappingPanel drag source', () => {
+describe('MappingPanel – Draggable sources', () => {
   let container;
   let panel;
 
@@ -26,6 +13,7 @@ describe('MappingPanel drag source', () => {
   };
 
   beforeEach(() => {
+    // Fresh DOM container for each test
     container = document.createElement('div');
     document.body.appendChild(container);
     panel = new MappingPanel({ parent: container });
@@ -37,19 +25,20 @@ describe('MappingPanel drag source', () => {
     store.set('schema', null);
   });
 
-  test('renders draggable list items for each schema field', () => {
+  test('renders list items for each schema field', () => {
     store.set('schema', schema);
     const items = container.querySelectorAll('li[data-field]');
     expect(items.length).toBe(2);
-    items.forEach((item) => expect(item.draggable).toBe(true));
+
+    // Items should no longer use native HTML draggable attribute – library handles drag.
+    items.forEach((item) => expect(item.draggable).toBe(false));
   });
 
-  test('dragstart sets field name in dataTransfer', () => {
+  test('applies focus style to currentFieldIndex', () => {
+    // Inject the index before setting schema so render picks it up
+    store.setState({ currentFieldIndex: 1 });
     store.set('schema', schema);
-    const item = container.querySelector('li[data-field="name"]');
-    const evt = new Event('dragstart', { bubbles: true, cancelable: true });
-    evt.dataTransfer = new MockDataTransfer();
-    item.dispatchEvent(evt);
-    expect(evt.dataTransfer.getData('text/plain')).toBe('name');
+    const items = [...container.querySelectorAll('li[data-field]')];
+    expect(items[1].style.outline).toContain('solid blue');
   });
 });
