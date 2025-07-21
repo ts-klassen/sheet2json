@@ -39,7 +39,7 @@
   - Create/modify control button handler in `src/main.js`.  
   - Validate current field has mapping; push deep clone into `store.records`; increment `currentFieldIndex`; update MappingPanel focus.
 
-- [ ] **8. Keyboard & touch accessibility**  
+- [x] **8. Keyboard & touch accessibility**  
   *Requirement 4*  
   - Enable `KeyboardSensor` in DraggableController and add `tabindex="0"` to draggable list items & overlays.  
   - Verify touch sensor works on mobile emulator.
