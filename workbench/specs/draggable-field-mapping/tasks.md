@@ -17,7 +17,7 @@
   - Add focus/active styling linked to `store.currentFieldIndex`.  
   - Ensure mirror element contains swatch + field name.
 
-- [ ] **4. Enhance `src/components/SheetRenderer.js` as Dropzone**  
+- [x] **4. Enhance `src/components/SheetRenderer.js` as Dropzone**  
   *Requirements 1, 5, 6*  
   4.1. Integrate Draggable Dropzone for `<td>` cells.  
   4.2. On drop, update `store.mapping` without altering the object shape.  
