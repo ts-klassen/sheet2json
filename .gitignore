@@ -18,6 +18,7 @@ dist/
 # Jest cache & artifacts
 .jest_cache/
 jest_output.txt
+jest_run.txt
 
 # Temporary files
 tmp.js
