@@ -36,7 +36,7 @@ export default class SchemaInput {
     this.container.appendChild(this.textarea);
     this.container.appendChild(this.fileInput);
     this.container.appendChild(this.errorEl);
-    this.container.appendChild(this.sidebar);
+    // Sidebar list removed per requirement to avoid duplicate draggable lists
 
     this.parent.appendChild(this.container);
 
@@ -49,27 +49,8 @@ export default class SchemaInput {
   }
 
   _renderFields(fields) {
-    this.sidebar.innerHTML = '';
-    fields.forEach((field) => {
-      const li = document.createElement('li');
-      li.style.display = 'flex';
-      li.style.alignItems = 'center';
-      li.style.marginBottom = '4px';
-
-      const swatch = document.createElement('span');
-      swatch.style.display = 'inline-block';
-      swatch.style.width = '1em';
-      swatch.style.height = '1em';
-      swatch.style.backgroundColor = colourForField(field);
-      swatch.style.marginRight = '0.5em';
-
-      const text = document.createElement('span');
-      text.textContent = field;
-
-      li.appendChild(swatch);
-      li.appendChild(text);
-      this.sidebar.appendChild(li);
-    });
+    // Feature removed – no sidebar field list needed. Sidebar element exists
+    // but remains empty to avoid confusing duplicate draggable sources.
   }
 
   _handleSchemaText(text) {

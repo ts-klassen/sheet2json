@@ -5,8 +5,11 @@ const initialState = {
   workbook: null, // Parsed workbook data
   schema: null, // Parsed JSON schema
   mapping: {}, // Field name -> CellAddress[]
+  // Tracks which schema field is currently being mapped in the "Next" workflow
+  currentFieldIndex: 0,
   errors: [], // Array of error objects / strings
   records: [] // Array of mapping snapshots (for multi-record sheets)
+  ,confirmNextMode: 'shiftRow' // 'shiftRow' | 'advanceField' – behaviour of Confirm & Next button
 };
 
 /**
@@ -108,3 +111,14 @@ export const store = new Store();
 
 // For tests, export initialState for resetting if needed.
 export { initialState };
+
+// Make the store accessible from integration/E2E tests executed in a real
+// browser context (Cypress).  The reference is attached only when the global
+// `window` object exists so that Node/Jest environments remain unaffected.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__STORE__', {
+    value: store,
+    writable: false,
+    configurable: false
+  });
+}

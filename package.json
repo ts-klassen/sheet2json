@@ -13,7 +13,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "@shopify/draggable": "^1.0.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.22.5",
@@ -35,6 +36,7 @@
     "testEnvironment": "jsdom",
     "transform": {
       "^.+\\.jsx?$": "babel-jest"
-    }
+    },
+    "cacheDirectory": "./.jest_cache"
   }
 }

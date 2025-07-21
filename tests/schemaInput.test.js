@@ -30,7 +30,7 @@ describe('SchemaInput component', () => {
     expect(Object.keys(stateSchema.properties)).toContain('fieldA');
 
     const listItems = container.querySelectorAll('ul.schema-fields li');
-    expect(listItems.length).toBe(2);
+    expect(listItems.length).toBe(0); // sidebar list removed
   });
 
   test('shows error message for invalid JSON', () => {

@@ -5,7 +5,7 @@ import { store } from '../src/store.js';
 class MockDataTransfer {
   constructor() {
     this.data = {};
-    this.types = ['text/plain'];
+    this.types = ['application/x-schema-field'];
   }
   setData(t, v) {
     this.data[t] = v;
@@ -52,7 +52,7 @@ describe('Drag-and-drop mapping', () => {
 
     const dropEvt = new Event('drop', { bubbles: true, cancelable: true });
     dropEvt.dataTransfer = new MockDataTransfer();
-    dropEvt.dataTransfer.setData('text/plain', 'title');
+    dropEvt.dataTransfer.setData('application/x-schema-field', 'title');
     td.dispatchEvent(dropEvt);
 
     const mapping = store.getState().mapping;
