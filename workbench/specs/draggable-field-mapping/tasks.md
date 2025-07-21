@@ -23,7 +23,7 @@
   4.2. On drop, update `store.mapping` without altering the object shape.  
   4.3. Maintain/extend highlight logic using field colour.
 
-- [ ] **5. Implement `src/components/OverlayManager.js`**  
+- [x] **5. Implement `src/components/OverlayManager.js`**  
   *Requirements 3, 5*  
   - Render absolutely-positioned overlay divs for every mapped cell.  
   - Register each overlay as a Draggable source sharing the same Dropzone.  

@@ -8,6 +8,7 @@ import MappingPanel from './components/MappingPanel.js';
 import { loadWorkbookFile } from './utils/workbookLoader.js';
 import './autoDetector.js';
 import SheetRenderer from './components/SheetRenderer.js';
+import OverlayManager from './components/OverlayManager.js';
 import { saveTemplate, loadTemplate } from './utils/templateManager.js';
 import { buildJson } from './utils/exporter.js';
 import { shiftMappingDown } from './utils/mappingUtils.js';
@@ -109,3 +110,6 @@ new MappingPanel({ parent: appEl });
 
 // Sheet grid below controls
 new SheetRenderer({ parent: appEl });
+
+// Overlay layer lives on top of the sheet grid
+new OverlayManager({ parent: appEl });
