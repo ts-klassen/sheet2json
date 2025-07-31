@@ -32,7 +32,8 @@ export default class OverlayConfigDialog {
       backgroundColor: 'rgba(0,0,0,0.6)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      zIndex: '1000'
     });
 
     const dialog = document.createElement('div');

@@ -9,3 +9,19 @@ body {
 #app {
   padding: 1rem;
 }
+
+/* Sticky control bar that hosts the primary action buttons such as
+   "Export JSON" and "Confirm & Next".  The element receives the `.controls-bar`
+   class from `src/main.js`.  Using `position: sticky` keeps it at the top of
+   the viewport when the user scrolls, while still occupying its slot in the
+   normal document flow (unlike `fixed` which would overlap content). */
+.controls-bar {
+  margin-top: 1rem;
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  padding: 0.5rem 0;
+  z-index: 100;
+  /* Optional visual affordance – subtle shadow */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}

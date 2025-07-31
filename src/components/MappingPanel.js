@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { colourForField } from '../utils/color.js';
+import { getSchemaProperties } from '../utils/schemaUtils.js';
 import DraggableController from '../dnd/DraggableController.js';
 
 /**
@@ -40,9 +41,7 @@ export default class MappingPanel {
     this.ul.innerHTML = '';
     if (!schema) return;
 
-    const props =
-      schema.properties ||
-      (schema.type === 'array' && schema.items && schema.items.properties);
+    const props = getSchemaProperties(schema);
 
     if (!props) return;
 
@@ -77,7 +76,8 @@ export default class MappingPanel {
       swatch.style.pointerEvents = 'none';
 
       const text = document.createElement('span');
-      text.textContent = field;
+      const labelSource = props?.[field] || {};
+      text.textContent = labelSource.description || labelSource.title || field;
       text.style.pointerEvents = 'none';
 
       li.appendChild(swatch);

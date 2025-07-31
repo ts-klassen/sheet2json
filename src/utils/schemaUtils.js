@@ -29,14 +29,9 @@ export function parseSchema(text) {
 export function validateSchemaObject(schema) {
   if (!schema || typeof schema !== 'object') throw new Error('Schema must be an object');
 
-  // Case 1: top-level properties
-  if (schema.properties && typeof schema.properties === 'object') {
-    return Object.keys(schema.properties);
-  }
-
-  // Case 2: top-level array with items.properties
-  if (schema.type === 'array' && schema.items && typeof schema.items === 'object' && schema.items.properties) {
-    return Object.keys(schema.items.properties);
+  const props = getSchemaProperties(schema);
+  if (props) {
+    return Object.keys(props);
   }
 
   throw new Error('Schema missing "properties"');
@@ -50,4 +45,44 @@ export function getSchemaFields(jsonText) {
   const obj = parseSchema(jsonText);
   const fields = validateSchemaObject(obj);
   return { schema: obj, fields };
+}
+
+/**
+ * Return the relevant properties object for the provided schema, unwrapping
+ * the common `{ cells: { properties: ... } }` wrapper when present.  Handles
+ * both object and array roots (inspecting `items` recursively).
+ *
+ * @param {object} schema JSON schema object.
+ * @returns {object|null} The properties object or null if not found.
+ */
+export function getSchemaProperties(schema) {
+  if (!schema || typeof schema !== 'object') return null;
+
+  // Helper to unwrap a single schema level.
+  const unwrap = (sch) => {
+    if (!sch || typeof sch !== 'object') return null;
+    if (sch.properties && typeof sch.properties === 'object') {
+      // If there is a single "cells" property with its own properties, prefer those.
+      if (sch.properties.cells) {
+        const cells = sch.properties.cells;
+        // cells as object
+        if (cells.properties) return cells.properties;
+        // cells as array
+        if (cells.items && cells.items.properties) return cells.items.properties;
+      }
+      return sch.properties;
+    }
+    return null;
+  };
+
+  // Direct object root.
+  const direct = unwrap(schema);
+  if (direct) return direct;
+
+  // Array root – inspect items schema (one level deep is sufficient for our purposes).
+  if (schema.type === 'array' && schema.items) {
+    return unwrap(schema.items);
+  }
+
+  return null;
 }

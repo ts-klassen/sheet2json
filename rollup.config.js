@@ -7,7 +7,10 @@ export default {
   output: {
     file: 'dist/bundle.js',
     format: 'esm',
-    sourcemap: true
+    sourcemap: true,
+    // Ensure build succeeds even when the code contains dynamic import()
+    // statements by bundling everything into a single file (no code-splitting).
+    inlineDynamicImports: true
   },
   plugins: [
     resolve(),

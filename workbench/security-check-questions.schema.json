@@ -1,29 +1,87 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "SecurityCheckQuestions",
-  "type": "array",
-  "items": {
-    "type": "object",
-    "properties": {
-      "no": {
-        "type": "string",
-        "description": "The question number or identifier."
+  "title": "Security-check Questions Export",
+  "type": "object",
+  "properties": {
+    "cells": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+        "no": {
+          "description": "項番",
+          "type": "object",
+          "properties": {
+            "cell": { "type": "string", "description": "A1-style reference" },
+            "value": { "type": "string" }
+          },
+          "required": ["cell", "value"]
+        },
+        "titles": {
+          "description": "見出し",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cell": { "type": "string" },
+              "value": { "type": "string" }
+            },
+            "required": ["cell", "value"]
+          }
+        },
+        "question": {
+          "description": "主文",
+          "type": "object",
+          "properties": {
+            "cell": { "type": "string" },
+            "value": { "type": "string" }
+          },
+          "required": ["cell", "value"]
+        },
+        "notes": {
+          "description": "備考",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cell": { "type": "string" },
+              "value": { "type": "string" }
+            },
+            "required": ["cell", "value"]
+          }
+        },
+        "answer": {
+          "description": "回答",
+          "type": "object",
+          "properties": {
+            "cell": { "type": "string" },
+            "value": { "type": "string" }
+          },
+          "required": ["cell", "value"]
+        },
+        "answer_sup": {
+          "description": "補足",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cell": { "type": "string" },
+              "value": { "type": "string" }
+            },
+            "required": ["cell", "value"]
+          }
+        }
       },
-      "question": {
-        "type": "string",
-        "description": "The text of the security question."
-      },
-      "notes": {
-        "type": "array",
-        "description": "Any additional instructions or clarifications for the question.",
-        "items": { "type": "string" }
-      },
-      "titles": {
-        "type": "array",
-        "description": "Relevant columns or categories from the Excel sheet that the question belongs to.",
-        "items": { "type": "string" }
+        "required": [
+        "no",
+        "titles",
+        "question",
+        "notes",
+        "answer",
+        "answer_sup"
+        ]
       }
-    },
-    "required": ["no", "titles", "question", "notes"]
-  }
+    }
+  },
+  "required": ["cells"]
 }

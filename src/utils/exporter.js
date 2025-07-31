@@ -1,18 +1,46 @@
 import { store } from '../store.js';
+import { getSchemaProperties } from './schemaUtils.js';
+
+// ---------------------------------------------------------------------------
+// Helper – convert zero-based column & row indexes to an A1-style reference.
+// Examples: (0,0) -> "A1"; (1,9) -> "B10"; (54,122) -> "BB123".
+// ---------------------------------------------------------------------------
+function toA1(col, row) {
+  // Convert column number to letters – algorithm borrowed from common
+  // spreadsheet helpers. Works for arbitrary column index >= 0.
+  let c = col;
+  let letters = '';
+  while (c >= 0) {
+    letters = String.fromCharCode((c % 26) + 65) + letters; // 65 = "A"
+    c = Math.floor(c / 26) - 1;
+  }
+  // Row index is zero-based inside the workbook – convert to 1-based for A1.
+  return `${letters}${row + 1}`;
+}
 
 function mappingToObject(mapping, workbook, schema) {
   const result = {};
 
   Object.entries(mapping).forEach(([field, addresses]) => {
-    const prop = (schema.properties || schema.items?.properties || {})[field] || {};
+    // Determine whether the schema defines the field as an array so we can
+    // preserve cardinality in the output. We locate the property via helper
+    // to support schemas that wrap definitions under "cells".
+    const prop = getSchemaProperties(schema)?.[field] || {};
     const isArray = prop.type === 'array';
 
-    const values = addresses.map(({ sheet, row, col }) => {
+    // Transform every mapped address into the desired structure { cell, value }.
+    const transformed = addresses.map(({ sheet, row, col }) => {
       const val = workbook.data[sheet]?.[row]?.[col];
-      return val === undefined ? null : val;
+      const value = val === undefined ? null : val;
+      return {
+        cell: toA1(col, row),
+        value
+      };
     });
 
-    result[field] = isArray ? values : values[0];
+    // Scalar fields take the *first* mapped address (if any), whereas array
+    // fields include all mappings in the same order they were added.
+    result[field] = isArray ? transformed : transformed[0] || null;
   });
 
   return result;
@@ -28,16 +56,39 @@ export function buildJson() {
     throw new Error('Missing mapping, schema, or workbook');
   }
 
-  // Helper to get cell value
-  // If schema root is array, use records array + current mapping as last record
+  // Detect "cells" array wrapper (object root with cells: array)
+  const cellsDef = schema.properties?.cells;
+
+  // -----------------------------------------------------------
+  // Case A – root object with `cells` array
+  // -----------------------------------------------------------
+  if (cellsDef && cellsDef.type === 'array') {
+    const snapshots = [...store.getState().records];
+    if (Object.keys(mapping).length) snapshots.push(mapping);
+
+    const cellObjects = snapshots.map((snap) =>
+      mappingToObject(snap, workbook, cellsDef.items || cellsDef)
+    );
+
+    return { cells: cellObjects };
+  }
+
+  // -----------------------------------------------------------
+  // Case B – schema root is *itself* an array of objects
+  // -----------------------------------------------------------
   if (schema.type === 'array') {
     const snapshots = [...store.getState().records];
     if (Object.keys(mapping).length) snapshots.push(mapping);
-    return snapshots.map((snap) => mappingToObject(snap, workbook, schema.items || schema));
+
+    return snapshots.map((snap) => ({
+      cells: mappingToObject(snap, workbook, schema.items || schema)
+    }));
   }
 
-  // Object root – just convert current mapping
-  return mappingToObject(mapping, workbook, schema);
+  // -----------------------------------------------------------
+  // Case C – simple object root (legacy behaviour)
+  // -----------------------------------------------------------
+  return { cells: mappingToObject(mapping, workbook, schema) };
 }
 
 // Expose helper on `window` for end-to-end tests so Cypress can easily obtain
