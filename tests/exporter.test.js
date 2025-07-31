@@ -30,11 +30,20 @@ describe('Exporter', () => {
     store.set('mapping', {});
   });
 
-  test('buildJson respects array vs scalar', () => {
+  test('buildJson includes cell & value (scalar vs array)', () => {
     const json = buildJson();
-    expect(json.title).toBe('Title');
-    expect(Array.isArray(json.notes)).toBe(true);
-    expect(json.notes.length).toBe(2);
+
+    // Root should be "cells"
+    expect(json).toHaveProperty('cells');
+
+    // Scalar field – single object { cell, value }
+    expect(json.cells.title).toEqual({ cell: 'A1', value: 'Title' });
+
+    // Array field – array of objects (order preserved)
+    expect(Array.isArray(json.cells.notes)).toBe(true);
+    expect(json.cells.notes.length).toBe(2);
+    expect(json.cells.notes[0]).toEqual({ cell: 'B1', value: 'Desc' });
+    expect(json.cells.notes[1]).toEqual({ cell: 'A1', value: 'Title' });
   });
 
   test('buildJson returns array of objects based on records', () => {
@@ -51,6 +60,12 @@ describe('Exporter', () => {
     const json = buildJson();
     expect(Array.isArray(json)).toBe(true);
     expect(json.length).toBe(3);
+
+    // Each entry should have cells root
+    json.forEach((entry) => {
+      expect(entry).toHaveProperty('cells');
+      expect(entry.cells).toHaveProperty('title');
+    });
   });
 
   // Removed array wrapping test on request; exporter now always returns an object.

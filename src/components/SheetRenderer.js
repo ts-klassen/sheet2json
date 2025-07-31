@@ -1,6 +1,7 @@
 import { store } from '../store.js';
 import { colourForField } from '../utils/color.js';
 import DraggableController, { FIELD_DROPPED } from '../dnd/DraggableController.js';
+import { getSchemaProperties } from '../utils/schemaUtils.js';
 
 /**
  * SheetRenderer component converts the currently active worksheet data array
@@ -331,9 +332,7 @@ export default class SheetRenderer {
 
     // Validate the field exists in the loaded schema – shields against random text.
     const { schema } = store.getState();
-    const props =
-      schema?.properties ||
-      (schema?.type === 'array' && schema?.items && schema.items.properties);
+    const props = getSchemaProperties(schema);
     if (!props || !Object.prototype.hasOwnProperty.call(props, field)) {
       return; // Unknown field → ignore drop.
     }
