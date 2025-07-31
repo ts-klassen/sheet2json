@@ -63,8 +63,12 @@ export function getSchemaProperties(schema) {
     if (!sch || typeof sch !== 'object') return null;
     if (sch.properties && typeof sch.properties === 'object') {
       // If there is a single "cells" property with its own properties, prefer those.
-      if (sch.properties.cells && sch.properties.cells.properties) {
-        return sch.properties.cells.properties;
+      if (sch.properties.cells) {
+        const cells = sch.properties.cells;
+        // cells as object
+        if (cells.properties) return cells.properties;
+        // cells as array
+        if (cells.items && cells.items.properties) return cells.items.properties;
       }
       return sch.properties;
     }

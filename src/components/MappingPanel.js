@@ -76,7 +76,8 @@ export default class MappingPanel {
       swatch.style.pointerEvents = 'none';
 
       const text = document.createElement('span');
-      text.textContent = field;
+      const labelSource = props?.[field] || {};
+      text.textContent = labelSource.description || labelSource.title || field;
       text.style.pointerEvents = 'none';
 
       li.appendChild(swatch);

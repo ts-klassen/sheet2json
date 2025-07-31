@@ -56,17 +56,39 @@ export function buildJson() {
     throw new Error('Missing mapping, schema, or workbook');
   }
 
-  const wrap = (obj) => ({ cells: obj });
+  // Detect "cells" array wrapper (object root with cells: array)
+  const cellsDef = schema.properties?.cells;
 
-  // Array schema root – return array of wrapped cell objects.
+  // -----------------------------------------------------------
+  // Case A – root object with `cells` array
+  // -----------------------------------------------------------
+  if (cellsDef && cellsDef.type === 'array') {
+    const snapshots = [...store.getState().records];
+    if (Object.keys(mapping).length) snapshots.push(mapping);
+
+    const cellObjects = snapshots.map((snap) =>
+      mappingToObject(snap, workbook, cellsDef.items || cellsDef)
+    );
+
+    return { cells: cellObjects };
+  }
+
+  // -----------------------------------------------------------
+  // Case B – schema root is *itself* an array of objects
+  // -----------------------------------------------------------
   if (schema.type === 'array') {
     const snapshots = [...store.getState().records];
     if (Object.keys(mapping).length) snapshots.push(mapping);
-    return snapshots.map((snap) => wrap(mappingToObject(snap, workbook, schema.items || schema)));
+
+    return snapshots.map((snap) => ({
+      cells: mappingToObject(snap, workbook, schema.items || schema)
+    }));
   }
 
-  // Object root – wrap single object
-  return wrap(mappingToObject(mapping, workbook, schema));
+  // -----------------------------------------------------------
+  // Case C – simple object root (legacy behaviour)
+  // -----------------------------------------------------------
+  return { cells: mappingToObject(mapping, workbook, schema) };
 }
 
 // Expose helper on `window` for end-to-end tests so Cypress can easily obtain
