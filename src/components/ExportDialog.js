@@ -13,6 +13,8 @@ export default class ExportDialog {
     this.overlay.style.display = 'flex';
     this.overlay.style.alignItems = 'center';
     this.overlay.style.justifyContent = 'center';
+    // Ensure the modal sits above sticky control bar (z-index 100)
+    this.overlay.style.zIndex = '1000';
 
     const dialog = document.createElement('div');
     dialog.style.backgroundColor = 'white';

@@ -39,9 +39,12 @@ new FileInput({
 
 new SheetPicker({ parent: appEl });
 new SchemaInput({ parent: appEl });
-// Control buttons
+// Control buttons – persists ("sticky") at the top of the viewport so the
+// primary workflow actions remain accessible even when the user scrolls the
+// worksheet far down.  The actual positioning rules live in the global
+// stylesheet; here we only attach the semantic class.
 const controls = document.createElement('div');
-controls.style.marginTop = '1em';
+controls.className = 'controls-bar';
 
 function makeButton(label, onClick) {
   const btn = document.createElement('button');
@@ -125,6 +128,17 @@ const confirmNextBtn = makeButton('Confirm & Next', () => {
   });
 
 controls.appendChild(confirmNextBtn);
+
+// Secondary interaction – double-click opens the configuration dialog so
+// users can switch between "shiftRow" and "advanceField" modes without diving
+// into developer tools.  This behaviour is documented inside
+// ConfirmNextConfigDialog but was not previously wired to the button.
+confirmNextBtn.addEventListener('dblclick', () => {
+  // Lazy-load to avoid upfront cost when users never open the dialog.
+  import('./components/ConfirmNextConfigDialog.js').then(({ default: Dialog }) => {
+    new Dialog();
+  });
+});
 
 appEl.appendChild(controls);
 

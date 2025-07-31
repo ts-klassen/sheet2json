@@ -16,7 +16,8 @@ export default class ConfirmNextConfigDialog {
       backgroundColor: 'rgba(0,0,0,0.6)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      zIndex: '1000' // above sticky bar
     });
 
     const dialog = document.createElement('div');
