@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { colourForField } from '../utils/color.js';
+import { colourForField, colourFillForField, registerFieldOrder } from '../utils/color.js';
 import { getSchemaProperties } from '../utils/schemaUtils.js';
 import DraggableController from '../dnd/DraggableController.js';
 
@@ -47,7 +47,11 @@ export default class MappingPanel {
 
     const currentIndex = store.getState().currentFieldIndex ?? 0;
 
-    Object.keys(props).forEach((field, idx) => {
+    const fields = Object.keys(props);
+    // Ensure a stable, sequential colour assignment to avoid near-duplicates
+    registerFieldOrder(fields);
+
+    fields.forEach((field, idx) => {
       const li = document.createElement('li');
       li.dataset.field = field;
       // Make the element focusable so Draggable's KeyboardSensor can pick it
@@ -68,7 +72,9 @@ export default class MappingPanel {
       swatch.style.display = 'inline-block';
       swatch.style.width = '1em';
       swatch.style.height = '1em';
-      swatch.style.backgroundColor = colourForField(field);
+      swatch.style.backgroundColor = colourFillForField(field, 0.25);
+      swatch.style.border = `1px solid ${colourForField(field)}`;
+      swatch.style.borderRadius = '3px';
       swatch.style.marginRight = '0.5em';
       // Ensure click/drag events bubble to <li> so the native draggable
       // attribute on the list item captures the dragstart even when the user

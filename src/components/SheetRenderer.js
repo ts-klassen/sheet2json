@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { colourForField } from '../utils/color.js';
+import { colourOutlineForField } from '../utils/color.js';
 import DraggableController, { FIELD_DROPPED } from '../dnd/DraggableController.js';
 import { getSchemaProperties } from '../utils/schemaUtils.js';
 import { colToLetters } from '../utils/a1.js';
@@ -101,7 +101,7 @@ export default class SheetRenderer {
         if (!this._highlightedKeys.has(key)) {
           const td = this._cellLookup.get(key);
           if (td) {
-            td.style.outline = `2px solid ${colourForField(field)}`;
+            td.style.outline = `2px solid ${colourOutlineForField(field, 0.5)}`;
             td.setAttribute('data-highlight', '');
           }
         }

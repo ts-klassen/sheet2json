@@ -9,7 +9,7 @@
  */
 
 import { store } from '../store.js';
-import { colourForField } from '../utils/color.js';
+import { colourForField, colourFillForField, colourBorderForField, colourOutlineForField } from '../utils/color.js';
 import { getSchemaProperties } from '../utils/schemaUtils.js';
 import DraggableController, {
   OVERLAY_MOVED
@@ -95,8 +95,8 @@ export default class OverlayManager {
         // Minimal visual style – later tasks will improve this.
         Object.assign(overlay.style, {
           position: 'absolute',
-          border: `2px solid ${colourForField(field)}`,
-          backgroundColor: 'rgba(255,255,255,0.6)',
+          border: `1px solid ${colourOutlineForField(field, 0.65)}`,
+          backgroundColor: colourFillForField(field, 0.12),
           padding: '2px',
           fontSize: '0.75rem',
           whiteSpace: 'nowrap',
