@@ -28,9 +28,13 @@ describe('Exporter', () => {
     store.set('workbook', null);
     store.set('schema', null);
     store.set('mapping', {});
+    store.set('records', []);
   });
 
   test('buildJson includes cell & value (scalar vs array)', () => {
+    // Only confirmed snapshots should be exported
+    const m = JSON.parse(JSON.stringify(store.getState().mapping));
+    store.set('records', [m]);
     const json = buildJson();
 
     // Root should be "cells"
@@ -59,7 +63,7 @@ describe('Exporter', () => {
 
     const json = buildJson();
     expect(Array.isArray(json)).toBe(true);
-    expect(json.length).toBe(3);
+    expect(json.length).toBe(2); // only confirmed snapshots are exported
 
     // Each entry should have cells root
     json.forEach((entry) => {

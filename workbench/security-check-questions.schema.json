@@ -60,7 +60,7 @@
           "required": ["cell", "value"]
         },
         "answer_sup": {
-          "description": "補足",
+          "description": "回答補足",
           "type": "array",
           "items": {
             "type": "object",

@@ -51,8 +51,8 @@ function mappingToObject(mapping, workbook, schema) {
  * Handles scalar vs array fields based on schema property type.
  */
 export function buildJson() {
-  const { mapping, workbook, schema } = store.getState();
-  if (!mapping || !schema || !workbook) {
+  const { mapping, workbook, schema, records } = store.getState();
+  if (!schema || !workbook) {
     throw new Error('Missing mapping, schema, or workbook');
   }
 
@@ -63,9 +63,7 @@ export function buildJson() {
   // Case A – root object with `cells` array
   // -----------------------------------------------------------
   if (cellsDef && cellsDef.type === 'array') {
-    const snapshots = [...store.getState().records];
-    if (Object.keys(mapping).length) snapshots.push(mapping);
-
+    const snapshots = Array.isArray(records) ? records : [];
     const cellObjects = snapshots.map((snap) =>
       mappingToObject(snap, workbook, cellsDef.items || cellsDef)
     );
@@ -77,9 +75,7 @@ export function buildJson() {
   // Case B – schema root is *itself* an array of objects
   // -----------------------------------------------------------
   if (schema.type === 'array') {
-    const snapshots = [...store.getState().records];
-    if (Object.keys(mapping).length) snapshots.push(mapping);
-
+    const snapshots = Array.isArray(records) ? records : [];
     return snapshots.map((snap) => ({
       cells: mappingToObject(snap, workbook, schema.items || schema)
     }));
@@ -88,7 +84,13 @@ export function buildJson() {
   // -----------------------------------------------------------
   // Case C – simple object root (legacy behaviour)
   // -----------------------------------------------------------
-  return { cells: mappingToObject(mapping, workbook, schema) };
+  // For simple object root, export only the latest confirmed snapshot.
+  const snapshots = Array.isArray(records) ? records : [];
+  if (snapshots.length === 0) {
+    throw new Error('No confirmed records to export');
+  }
+  const last = snapshots[snapshots.length - 1];
+  return { cells: mappingToObject(last, workbook, schema) };
 }
 
 // Expose helper on `window` for end-to-end tests so Cypress can easily obtain

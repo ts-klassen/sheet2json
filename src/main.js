@@ -37,7 +37,36 @@ new FileInput({
 });
 
 new SheetPicker({ parent: appEl });
-new SchemaInput({ parent: appEl });
+const schemaInput = new SchemaInput({ parent: appEl });
+
+// Load schema from query param ?schema=URL (URL-encoded). Uses GET fetch.
+// On success, fills the textarea and applies the schema to the store.
+async function loadSchemaFromQuery() {
+  try {
+    if (typeof window === 'undefined' || !window.location) return;
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get('schema');
+    if (!url) return;
+    const res = await fetch(url, { method: 'GET' });
+    if (!res.ok) throw new Error(`Failed to load schema: ${res.status}`);
+    const text = await res.text();
+    schemaInput.textarea.value = text;
+    // Call component handler directly to parse + validate
+    schemaInput._handleSchemaText(text);
+    // If schema is valid, hide the schema editor/uploader UI
+    const s = store.getState().schema;
+    if (s && typeof s === 'object') {
+      schemaInput.container.style.display = 'none';
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err);
+    // eslint-disable-next-line no-alert
+    alert(err.message || 'Failed to load schema from URL');
+  }
+}
+
+loadSchemaFromQuery();
 // Control buttons – persists ("sticky") at the top of the viewport so the
 // primary workflow actions remain accessible even when the user scrolls the
 // worksheet far down.  The actual positioning rules live in the global
