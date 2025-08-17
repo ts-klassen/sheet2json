@@ -21,14 +21,14 @@ function toA1(col, row) {
 function mappingToObject(mapping, workbook, schema) {
   const result = {};
 
-  Object.entries(mapping).forEach(([field, addresses]) => {
-    // Determine whether the schema defines the field as an array so we can
-    // preserve cardinality in the output. We locate the property via helper
-    // to support schemas that wrap definitions under "cells".
-    const prop = getSchemaProperties(schema)?.[field] || {};
+  // Iterate across all schema properties to ensure array fields appear as
+  // empty arrays even when no mapping exists.
+  const props = getSchemaProperties(schema) || {};
+  Object.keys(props).forEach((field) => {
+    const prop = props[field] || {};
     const isArray = prop.type === 'array';
+    const addresses = Array.isArray(mapping?.[field]) ? mapping[field] : [];
 
-    // Transform every mapped address into the desired structure { cell, value }.
     const transformed = addresses.map(({ sheet, row, col }) => {
       const val = workbook.data[sheet]?.[row]?.[col];
       const value = val == null ? '' : val; // use empty string for empty cells
@@ -38,9 +38,15 @@ function mappingToObject(mapping, workbook, schema) {
       };
     });
 
-    // Scalar fields take the *first* mapped address (if any), whereas array
-    // fields include all mappings in the same order they were added.
-    result[field] = isArray ? transformed : transformed[0] || null;
+    if (isArray) {
+      // Always include arrays; empty array when nothing mapped
+      result[field] = transformed;
+    } else {
+      // For scalars, omit the field entirely when unmapped
+      if (transformed.length > 0) {
+        result[field] = transformed[0];
+      }
+    }
   });
 
   return result;

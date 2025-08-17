@@ -104,10 +104,23 @@ export default class MappingPanel {
         });
       }
 
-      // Show unmapped fields in bold red, mapped in normal.
-      if (!mapping || !mapping[field] || mapping[field].length === 0) {
+      // Styling rules:
+      // - Array fields: always green, regardless of mapping presence
+      // - Scalar fields: red + bold if not mapped; normal black once mapped
+      const meta = props?.[field] || {};
+      const isArrayProp = meta.type === 'array';
+      if (isArrayProp) {
+        text.style.color = 'green';
         text.style.fontWeight = 'bold';
-        text.style.color = 'red';
+      } else {
+        const isMapped = mapping && mapping[field] && mapping[field].length > 0;
+        if (!isMapped) {
+          text.style.fontWeight = 'bold';
+          text.style.color = 'red';
+        } else {
+          text.style.fontWeight = 'normal';
+          text.style.color = '';
+        }
       }
 
       // Highlight the active/current field (focus style)

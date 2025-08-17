@@ -300,14 +300,25 @@ export default class SheetRenderer {
     const mapping = { ...state.mapping };
     const existing = mapping[field] ? [...mapping[field]] : [];
 
-    // Avoid duplicate addresses for the same field -> cell combination.
-    const duplicate = existing.some(
-      (addr) => addr.sheet === sheet && addr.row === row && addr.col === col
-    );
-    if (duplicate) return;
+    // Determine if schema allows multiple addresses for this field
+    const props2 = getSchemaProperties(state.schema);
+    const isArrayProp = !!(props2 && props2[field] && props2[field].type === 'array');
 
-    existing.push(newAddr);
-    mapping[field] = existing;
+    if (isArrayProp) {
+      // Avoid duplicate addresses for the same field -> cell combination.
+      const duplicate = existing.some(
+        (addr) => addr.sheet === sheet && addr.row === row && addr.col === col
+      );
+      if (duplicate) return;
+      existing.push(newAddr);
+      mapping[field] = existing;
+    } else {
+      // Single mapping only – replace or create the first entry while
+      // preserving any movement config from the previous one.
+      const prev = existing[0] || {};
+      mapping[field] = [{ ...prev, ...newAddr }];
+    }
+
     store.set('mapping', mapping);
   }
 
@@ -466,11 +477,22 @@ export default class SheetRenderer {
     const mapping = { ...state.mapping };
     const existing = mapping[field] ? [...mapping[field]] : [];
 
-    // Avoid duplicate addresses
-    if (!existing.some((addr) => addr.sheet === sheet && addr.row === row && addr.col === col)) {
-      existing.push(newAddr);
-      mapping[field] = existing;
-      store.set('mapping', mapping);
+    // Determine if schema allows multiple addresses for this field
+    const props2 = getSchemaProperties(state.schema);
+    const isArrayProp = !!(props2 && props2[field] && props2[field].type === 'array');
+
+    if (isArrayProp) {
+      // Avoid duplicates then append
+      if (!existing.some((addr) => addr.sheet === sheet && addr.row === row && addr.col === col)) {
+        existing.push(newAddr);
+        mapping[field] = existing;
+      }
+    } else {
+      // Single mapping only – replace first while preserving prior config
+      const prev = existing[0] || {};
+      mapping[field] = [{ ...prev, ...newAddr }];
     }
+
+    store.set('mapping', mapping);
   }
 }
