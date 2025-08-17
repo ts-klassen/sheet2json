@@ -9,7 +9,6 @@ import { loadWorkbookFile } from './utils/workbookLoader.js';
 import './autoDetector.js';
 import SheetRenderer from './components/SheetRenderer.js';
 import OverlayManager from './components/OverlayManager.js';
-import { saveTemplate, loadTemplate } from './utils/templateManager.js';
 import { buildJson } from './utils/exporter.js';
 import { advanceCurrentField, shiftMappingDown } from './utils/mappingUtils.js';
 import ExportDialog from './components/ExportDialog.js';
@@ -54,39 +53,7 @@ function makeButton(label, onClick) {
   return btn;
 }
 
-// Save Template
-controls.appendChild(
-  makeButton('Save Template', () => {
-    try {
-      saveTemplate();
-    } catch (err) {
-      alert(err.message);
-    }
-  })
-);
-
-// Load Template (hidden file input)
-const loadInput = document.createElement('input');
-loadInput.type = 'file';
-loadInput.accept = '.json,application/json';
-loadInput.style.display = 'none';
-loadInput.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    await loadTemplate(file);
-    alert('Template loaded');
-  } catch (err) {
-    alert(err.message);
-  }
-});
-controls.appendChild(loadInput);
-
-controls.appendChild(
-  makeButton('Load Template', () => {
-    loadInput.click();
-  })
-);
+// Template save/load feature removed
 
 // Export JSON
 controls.appendChild(

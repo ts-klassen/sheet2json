@@ -163,7 +163,7 @@ store.mapping  // { [field: string]: CellAddress[] }
 store.records  // CellAddress[][] – snapshots created by “Confirm & Next”
 ```
 
-Templates saved **before** the refactor still load without any modifications (see `Requirement 6`).
+Note: The previous mapping templates feature (save/load) has been removed.
 
 ---
 
