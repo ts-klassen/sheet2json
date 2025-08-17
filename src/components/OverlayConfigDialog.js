@@ -52,9 +52,11 @@ export default class OverlayConfigDialog {
     modeWrapper.style.marginBottom = '0.75em';
 
     const stepRadio = this._makeRadio('mode', 'step', 'Row offset');
+    const jumpRadio = this._makeRadio('mode', 'jump', 'Jump to next value');
     const scriptRadio = this._makeRadio('mode', 'script', 'Custom JavaScript');
 
     modeWrapper.appendChild(stepRadio.wrapper);
+    modeWrapper.appendChild(jumpRadio.wrapper);
     modeWrapper.appendChild(scriptRadio.wrapper);
     dialog.appendChild(modeWrapper);
 
@@ -101,6 +103,13 @@ export default class OverlayConfigDialog {
       colLabel.style.display = 'none';
       scriptArea.style.display = 'block';
       scriptArea.value = cfg.script;
+    } else if (cfg.jumpNext) {
+      jumpRadio.input.checked = true;
+      rowInput.value = Number.isFinite(cfg.dy) ? cfg.dy : 1;
+      colInput.value = Number.isFinite(cfg.dx) ? cfg.dx : 0;
+      rowLabel.style.display = 'block';
+      colLabel.style.display = 'block';
+      scriptArea.style.display = 'none';
     } else {
       stepRadio.input.checked = true;
       rowInput.value = Number.isFinite(cfg.dy) ? cfg.dy : Number.isFinite(cfg.step) ? cfg.step : 1;
@@ -124,6 +133,13 @@ export default class OverlayConfigDialog {
         scriptArea.style.display = 'block';
       }
     });
+    jumpRadio.input.addEventListener('change', () => {
+      if (jumpRadio.input.checked) {
+        rowLabel.style.display = 'block';
+        colLabel.style.display = 'block';
+        scriptArea.style.display = 'none';
+      }
+    });
 
     // Actions
     const actions = document.createElement('div');
@@ -134,7 +150,7 @@ export default class OverlayConfigDialog {
     saveBtn.type = 'button';
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', () =>
-      this._save(stepRadio.input.checked, rowInput.value, colInput.value, scriptArea.value)
+      this._save(stepRadio.input.checked, jumpRadio.input.checked, rowInput.value, colInput.value, scriptArea.value)
     );
 
     const cancelBtn = document.createElement('button');
@@ -176,23 +192,25 @@ export default class OverlayConfigDialog {
     return { wrapper, input };
   }
 
-  _save(isStepMode, rowVal, colVal, scriptValue) {
+  _save(isStepMode, isJumpMode, rowVal, colVal, scriptValue) {
     const state = store.getState();
     const mapping = { ...state.mapping };
     mapping[this.field] = [...(mapping[this.field] || [])];
     const base = { ...mapping[this.field][this.index] };
 
-    if (isStepMode) {
+    if (isStepMode || isJumpMode) {
       const dy = parseInt(rowVal, 10);
       const dx = parseInt(colVal, 10);
       base.dy = Number.isFinite(dy) ? dy : 1;
       base.dx = Number.isFinite(dx) ? dx : 0;
+      base.jumpNext = !!isJumpMode;
       delete base.step;
       delete base.script;
     } else {
       base.script = String(scriptValue || '').trim();
       delete base.dy;
       delete base.dx;
+      delete base.jumpNext;
     }
 
     mapping[this.field][this.index] = base;

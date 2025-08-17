@@ -25,3 +25,60 @@ body {
   /* Optional visual affordance – subtle shadow */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+/* Cells that were originally part of a merged block (not top-left). */
+.merge-shadow {
+  color: #888;
+}
+
+/* Render a clear grid between all worksheet cells */
+table.sheet-renderer {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+table.sheet-renderer td,
+table.sheet-renderer th {
+  border: 1px solid #c8c8c8; /* clear, consistent grid lines */
+}
+
+/* Header styling for Excel-like labels */
+table.sheet-renderer th {
+  background: #f7f7f7;
+  font-weight: 600;
+  text-align: center;
+}
+
+table.sheet-renderer th.row-header {
+  text-align: right;
+  padding: 0 0.5em;
+  width: 3em;
+}
+
+table.sheet-renderer th.col-header {
+  padding: 0.25em 0.5em;
+}
+
+/* Tooltip for long black-text cells: shows full content on hover */
+table.sheet-renderer td.hover-reveal {
+  position: relative;
+  overflow: visible; /* allow tooltip to extend beyond cell */
+  color: #c00; /* [hover me] in red */
+}
+
+table.sheet-renderer td.hover-reveal:hover::after {
+  content: attr(data-fulltext);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 4px;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  width: max-content;          /* grow to fit content */
+  max-width: min(80vw, 1200px);/* never exceed viewport */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}

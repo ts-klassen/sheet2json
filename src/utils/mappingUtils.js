@@ -29,14 +29,31 @@ export function shiftMappingDown() {
     store.set('records', [...records, snapshot]);
   }
 
-  const sheetData = workbook.data[workbook.activeSheet] || [];
-  const maxRows = sheetData.length;
+  const shadowCache = new Map(); // sheetName -> Set('r:c') of shadow cells
+  function getShadowSet(sheetName) {
+    if (shadowCache.has(sheetName)) return shadowCache.get(sheetName);
+    const set = new Set();
+    const ranges = (workbook.merges && workbook.merges[sheetName]) || [];
+    ranges.forEach((rng) => {
+      for (let r = rng.s.r; r <= rng.e.r; r++) {
+        for (let c = rng.s.c; c <= rng.e.c; c++) {
+          if (r === rng.s.r && c === rng.s.c) continue;
+          set.add(`${r}:${c}`);
+        }
+      }
+    });
+    shadowCache.set(sheetName, set);
+    return set;
+  }
 
   const newMapping = {};
   Object.entries(mapping).forEach(([field, addresses]) => {
     const shifted = addresses
       .map((addr, index) => {
         // Support custom script or numeric step.
+        const sheetName = addr.sheet || workbook.activeSheet;
+        const grid = (workbook.data && workbook.data[sheetName]) || [];
+        const maxRows = grid.length;
         let newRow = addr.row;
         let newCol = addr.col;
 
@@ -68,15 +85,44 @@ export function shiftMappingDown() {
         } else {
           const dy = Number.isFinite(addr.dy) ? addr.dy : Number.isFinite(addr.step) ? addr.step : 1;
           const dx = Number.isFinite(addr.dx) ? addr.dx : 0;
-          newRow += dy;
-          newCol += dx;
+          if (addr.jumpNext) {
+            // Walk along (dy,dx) skipping empty and shadow cells
+            const shadow = getShadowSet(sheetName);
+            let attempts = 0;
+            const maxAttempts = Math.max(1, maxRows * 4);
+            let r = newRow;
+            let c = newCol;
+            while (attempts < maxAttempts) {
+              r += dy;
+              c += dx;
+              attempts += 1;
+              if (r < 0 || c < 0) break;
+              if (r >= maxRows) break;
+              const rowArr = grid[r] || [];
+              if (c >= rowArr.length) break;
+              const val = rowArr[c];
+              const isEmpty = val == null || val === '';
+              const isShadow = shadow.has(`${r}:${c}`);
+              if (!isEmpty && !isShadow) {
+                newRow = r;
+                newCol = c;
+                break;
+              }
+            }
+          } else {
+            newRow += dy;
+            newCol += dx;
+          }
         }
 
         return { ...addr, row: newRow, col: newCol };
       })
       .filter((addr) => {
+        const sheetName = addr.sheet || workbook.activeSheet;
+        const grid = (workbook.data && workbook.data[sheetName]) || [];
+        const maxRows = grid.length;
         if (addr.row < 0 || addr.row >= maxRows) return false;
-        const rowArr = sheetData[addr.row] || [];
+        const rowArr = grid[addr.row] || [];
         if (addr.col < 0 || addr.col >= rowArr.length) return false;
         return true;
       });

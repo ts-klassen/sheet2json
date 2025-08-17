@@ -33,7 +33,7 @@ function buildMapping(fields, activeSheet) {
     const cellAddr = RULES[field.toLowerCase()];
     if (cellAddr) {
       const { row, col } = parseCellAddress(cellAddr);
-      mapping[field] = [{ sheet: activeSheet, row, col }];
+      mapping[field] = [{ sheet: activeSheet, row, col, dy: 1, dx: 0, jumpNext: true }];
     }
   });
   return mapping;

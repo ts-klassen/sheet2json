@@ -138,6 +138,25 @@ confirmNextBtn.addEventListener('dblclick', () => {
 
 appEl.appendChild(controls);
 
+// Checkbox to toggle visibility of gray shadow text in previously merged cells
+const shadowToggleLabel = document.createElement('label');
+shadowToggleLabel.style.marginLeft = '1em';
+const shadowToggle = document.createElement('input');
+shadowToggle.type = 'checkbox';
+shadowToggle.style.marginRight = '0.25em';
+shadowToggle.checked = !!store.getState().showMergeShadowText;
+shadowToggle.addEventListener('change', () => {
+  try {
+    store.set('showMergeShadowText', shadowToggle.checked);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+shadowToggleLabel.appendChild(shadowToggle);
+shadowToggleLabel.appendChild(document.createTextNode('Show gray merged text'));
+controls.appendChild(shadowToggleLabel);
+
+
 new MappingPanel({ parent: appEl });
 
 // Sheet grid below controls

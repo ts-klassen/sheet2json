@@ -68,6 +68,44 @@ export function parseArrayBuffer(buffer, fileName = '') {
     }));
   });
 
+  // Unmerge behaviour: for each merge range, copy the top-left value into all
+  // cells covered by the range. This makes the grid rectangular and ensures
+  // exports use the visible value even when a user maps a "shadow" cell that
+  // was originally part of a merged block.
+  sheets.forEach((sheetName) => {
+    const ranges = merges[sheetName] || [];
+    if (!ranges.length) return;
+    const grid = data[sheetName] || [];
+
+    ranges.forEach((rng) => {
+      const r0 = rng.s.r;
+      const c0 = rng.s.c;
+      const r1 = rng.e.r;
+      const c1 = rng.e.c;
+
+      // Ensure rows exist up to r1
+      for (let r = 0; r <= r1; r++) {
+        if (!Array.isArray(grid[r])) grid[r] = [];
+      }
+
+      // Ensure each affected row has columns up to c1
+      for (let r = r0; r <= r1; r++) {
+        const rowArr = grid[r];
+        if (rowArr.length <= c1) {
+          // fill with empty strings to avoid undefined
+          for (let c = rowArr.length; c <= c1; c++) rowArr[c] = '';
+        }
+      }
+
+      const topLeftVal = (grid[r0] && grid[r0][c0]) != null ? grid[r0][c0] : '';
+      for (let r = r0; r <= r1; r++) {
+        for (let c = c0; c <= c1; c++) {
+          grid[r][c] = topLeftVal;
+        }
+      }
+    });
+  });
+
   return {
     sheets,
     activeSheet,

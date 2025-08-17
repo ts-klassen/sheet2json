@@ -2,6 +2,7 @@ import { store } from '../store.js';
 import { colourForField } from '../utils/color.js';
 import DraggableController, { FIELD_DROPPED } from '../dnd/DraggableController.js';
 import { getSchemaProperties } from '../utils/schemaUtils.js';
+import { colToLetters } from '../utils/a1.js';
 
 /**
  * SheetRenderer component converts the currently active worksheet data array
@@ -46,10 +47,23 @@ export default class SheetRenderer {
     this.table.addEventListener('drop', this._onDrop);
   }
 
+  // Convert zero-based column index to Excel-style letters (A, B, ..., Z, AA, AB, ...)
+  _colIndexToLetters(idx) {
+    return colToLetters(idx);
+  }
+
   _onStoreChange(newState, prevState) {
-    // Only re-render if workbook changed or active sheet changed
+    // Only re-render if workbook changed, active sheet changed, or shadow text toggle changed
     const prevWb = prevState ? prevState.workbook : null;
-    if (newState.workbook !== prevWb || (newState.workbook && prevWb && newState.workbook.activeSheet !== prevWb.activeSheet)) {
+    const workbookChanged = newState.workbook !== prevWb;
+    const activeChanged =
+      newState.workbook &&
+      prevWb &&
+      newState.workbook.activeSheet !== prevWb.activeSheet;
+    const shadowToggleChanged =
+      prevState && newState.showMergeShadowText !== prevState.showMergeShadowText;
+    const viewRangeChanged = prevState && newState.viewRange !== prevState.viewRange;
+    if (workbookChanged || activeChanged || shadowToggleChanged || viewRangeChanged) {
       this.render(newState.workbook);
     }
   }
@@ -122,19 +136,17 @@ export default class SheetRenderer {
     const sheetName = workbook.activeSheet;
     const data = workbook.data[sheetName] || [];
     const merges = (workbook.merges && workbook.merges[sheetName]) || [];
-
-    // Build quick lookup map for merges
-    const mergeLookup = new Map();
+    // Build a lookup set of shadow cells (all cells covered by a merge range
+    // except the top-left). We will render every cell individually (no
+    // rowSpan/colSpan) and apply a "grayed out" style to these shadow cells
+    // so users can still see the repeated value while understanding it comes
+    // from a previously merged block.
+    const shadowCells = new Set();
     merges.forEach((rng) => {
-      const rowspan = rng.e.r - rng.s.r + 1;
-      const colspan = rng.e.c - rng.s.c + 1;
-      // Mark start cell with span info
-      mergeLookup.set(`${rng.s.r}:${rng.s.c}`, { rowspan, colspan });
-      // Mark other cells in range to be skipped
       for (let r = rng.s.r; r <= rng.e.r; r++) {
         for (let c = rng.s.c; c <= rng.e.c; c++) {
-          if (r === rng.s.r && c === rng.s.c) continue;
-          mergeLookup.set(`${r}:${c}`, null);
+          if (r === rng.s.r && c === rng.s.c) continue; // skip top-left
+          shadowCells.add(`${r}:${c}`);
         }
       }
     });
@@ -145,50 +157,110 @@ export default class SheetRenderer {
     // removed and memory does not leak across renders.
     this._cellLookup.clear();
 
-    for (let r = 0; r < data.length; r++) {
+    // Determine visible range from store; if absent, default to full data extents.
+    const vr = store.getState().viewRange;
+    let startRow = 0;
+    let startCol = 0;
+    let endRow = Math.max(0, data.length - 1);
+    let endCol = data.reduce((m, row) => Math.max(m, (row || []).length), 0) - 1;
+    if (
+      vr &&
+      vr.start && vr.end &&
+      Number.isFinite(vr.start.row) && Number.isFinite(vr.start.col) &&
+      Number.isFinite(vr.end.row) && Number.isFinite(vr.end.col)
+    ) {
+      startRow = Math.max(0, vr.start.row);
+      startCol = Math.max(0, vr.start.col);
+      endRow = Math.max(startRow, vr.end.row);
+      endCol = Math.max(startCol, vr.end.col);
+    }
+
+    const maxCols = Math.max(0, endCol - startCol + 1);
+
+    // Build header row with Excel-style column labels
+    const thead = document.createElement('thead');
+    const headerTr = document.createElement('tr');
+    const cornerTh = document.createElement('th');
+    cornerTh.className = 'corner-header';
+    cornerTh.textContent = '';
+    headerTr.appendChild(cornerTh);
+    for (let c = 0; c < maxCols; c++) {
+      const th = document.createElement('th');
+      th.className = 'col-header';
+      th.textContent = this._colIndexToLetters(startCol + c);
+      headerTr.appendChild(th);
+    }
+    thead.appendChild(headerTr);
+    fragment.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    for (let r = startRow; r <= endRow; r++) {
       const row = data[r] || [];
       const tr = document.createElement('tr');
-      // Determine total columns for this row as maximum between row length and merge columns
-      let rowColCount = row.length;
-      // Consider merges that extend beyond row length
-      merges.forEach((rng) => {
-        if (rng.s.r === r && rng.e.c + 1 > rowColCount) {
-          rowColCount = rng.e.c + 1;
-        }
-      });
 
-      // We'll iterate up to rowColCount or further if merges require.
-      let c = 0;
-      while (c < rowColCount) {
-        const lookup = mergeLookup.get(`${r}:${c}`);
-        if (lookup === null) {
-          // Cell is merged and should be skipped.
-          c += 1;
-          continue;
-        }
-
+      // Row header with 1-based index
+      const rowTh = document.createElement('th');
+      rowTh.className = 'row-header';
+      rowTh.textContent = String(r + 1);
+      tr.appendChild(rowTh);
+      for (let c = 0; c < maxCols; c++) {
         const td = document.createElement('td');
-        const cellValue = row[c];
-        td.textContent = cellValue === null || cellValue === undefined ? '' : String(cellValue);
+        const cellValue = row[startCol + c];
+        const text = cellValue === null || cellValue === undefined ? '' : String(cellValue);
         td.dataset.r = r;
-        td.dataset.c = c;
+        td.dataset.c = startCol + c;
 
         // Store reference for fast lookup during highlight updates.
-        this._cellLookup.set(`${r}:${c}`, td);
+        this._cellLookup.set(`${r}:${startCol + c}`, td);
 
-        if (lookup) {
-          if (lookup.rowspan > 1) td.rowSpan = lookup.rowspan;
-          if (lookup.colspan > 1) td.colSpan = lookup.colspan;
-          // Style to indicate merged region visually
-          td.style.backgroundColor = '#f0f0f0';
+        // Apply grayed-out style to shadow cells of previously merged ranges
+        if (shadowCells.has(`${r}:${startCol + c}`)) {
+          td.classList.add('merge-shadow');
+          // Either show truncated text or nothing depending on user setting
+          const showShadow = !!store.getState().showMergeShadowText;
+          if (showShadow) {
+            // Shadow cells: show up to 10 chars then append "..." if longer.
+            td.textContent = text.length > 10 ? `${text.slice(0, 10)}...` : text;
+            td.removeAttribute('title');
+            td.style.cursor = '';
+          } else {
+            td.textContent = '';
+            td.removeAttribute('title');
+            td.style.cursor = '';
+          }
+        } else {
+          // Normal (black) cells: show full text up to 100 chars; if longer,
+          // display a hint and reveal full value on hover.
+          if (text.length > 100) {
+            td.textContent = '[hover me; or click to expand]';
+            td.removeAttribute('title');
+            td.dataset.fulltext = text;
+            td.classList.add('hover-reveal');
+            td.style.cursor = 'pointer';
+            // Click to expand to full, black text
+            td.addEventListener('click', () => {
+              const full = td.dataset.fulltext || '';
+              td.textContent = full;
+              td.classList.remove('hover-reveal');
+              td.removeAttribute('data-fulltext');
+              td.style.cursor = '';
+            }, { once: true });
+          } else {
+            td.textContent = text;
+            td.removeAttribute('title');
+            td.removeAttribute('data-fulltext');
+            td.classList.remove('hover-reveal');
+            td.style.cursor = '';
+          }
         }
 
         tr.appendChild(td);
-        c += lookup && lookup.colspan ? lookup.colspan : 1;
       }
-      fragment.appendChild(tr);
+      tbody.appendChild(tr);
     }
 
+    fragment.appendChild(tbody);
     this.table.appendChild(fragment);
 
     // Apply highlights after DOM built
@@ -224,7 +296,7 @@ export default class SheetRenderer {
     const sheet = sheetFromDetail || state.workbook?.activeSheet;
     if (!sheet) return;
 
-    const newAddr = { sheet, row, col };
+    const newAddr = { sheet, row, col, dy: 1, dx: 0, jumpNext: true };
     const mapping = { ...state.mapping };
     const existing = mapping[field] ? [...mapping[field]] : [];
 
@@ -348,7 +420,7 @@ export default class SheetRenderer {
     if (!sheet) return;
 
     // Update mapping
-    const newAddr = { sheet, row, col };
+    const newAddr = { sheet, row, col, dy: 1, dx: 0, jumpNext: true };
     const mapping = { ...state.mapping };
     const existing = mapping[field] ? [...mapping[field]] : [];
 
