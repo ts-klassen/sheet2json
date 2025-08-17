@@ -60,7 +60,8 @@ export function parseArrayBuffer(buffer, fileName = '') {
 
   sheets.forEach((sheetName) => {
     const sheet = wb.Sheets[sheetName];
-    data[sheetName] = utils.sheet_to_json(sheet, { header: 1, raw: true, defval: null });
+    // Use empty string for empty/missing cells so downstream export never emits null for values.
+    data[sheetName] = utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
     merges[sheetName] = (sheet['!merges'] || []).map((rng) => ({
       s: { r: rng.s.r, c: rng.s.c },
       e: { r: rng.e.r, c: rng.e.c }

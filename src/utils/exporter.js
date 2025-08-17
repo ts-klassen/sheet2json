@@ -31,7 +31,7 @@ function mappingToObject(mapping, workbook, schema) {
     // Transform every mapped address into the desired structure { cell, value }.
     const transformed = addresses.map(({ sheet, row, col }) => {
       const val = workbook.data[sheet]?.[row]?.[col];
-      const value = val === undefined ? null : val;
+      const value = val == null ? '' : val; // use empty string for empty cells
       return {
         cell: toA1(col, row),
         value
