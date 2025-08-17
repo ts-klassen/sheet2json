@@ -73,6 +73,13 @@ loadSchemaFromQuery();
 // stylesheet; here we only attach the semantic class.
 const controls = document.createElement('div');
 controls.className = 'controls-bar';
+// Two internal rows inside the single sticky bar
+const controlsTop = document.createElement('div');
+controlsTop.className = 'controls-top';
+const controlsBottom = document.createElement('div');
+controlsBottom.className = 'controls-bottom';
+controls.appendChild(controlsTop);
+controls.appendChild(controlsBottom);
 
 function makeButton(label, onClick) {
   const btn = document.createElement('button');
@@ -85,7 +92,7 @@ function makeButton(label, onClick) {
 // Template save/load feature removed
 
 // Export JSON
-controls.appendChild(
+controlsTop.appendChild(
   makeButton('Export JSON', () => {
     try {
       const json = buildJson();
@@ -123,7 +130,7 @@ const confirmNextBtn = makeButton('Confirm & Next', () => {
     }
   });
 
-controls.appendChild(confirmNextBtn);
+controlsTop.appendChild(confirmNextBtn);
 
 // Secondary interaction – double-click opens the configuration dialog so
 // users can switch between "shiftRow" and "advanceField" modes without diving
@@ -154,13 +161,55 @@ shadowToggle.addEventListener('change', () => {
 });
 shadowToggleLabel.appendChild(shadowToggle);
 shadowToggleLabel.appendChild(document.createTextNode('Show gray merged text'));
-controls.appendChild(shadowToggleLabel);
+controlsTop.appendChild(shadowToggleLabel);
 
 
-new MappingPanel({ parent: appEl });
+new MappingPanel({ parent: controlsBottom });
 
 // Sheet grid below controls
 new SheetRenderer({ parent: appEl });
 
 // Overlay layer lives on top of the sheet grid
 new OverlayManager({ parent: appEl });
+
+
+// Global discard area for overlays: dropping an overlay anywhere outside the
+// sheet grid removes that mapping entry (same as clicking Remove in settings).
+function handleGlobalDragOver(e) {
+  if (!e.dataTransfer) return;
+  const types = Array.from(e.dataTransfer.types || []);
+  if (types.includes('application/x-overlay-move')) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+}
+
+function handleGlobalDrop(e) {
+  if (!e.dataTransfer) return;
+  const payload = e.dataTransfer.getData('application/x-overlay-move');
+  if (!payload) return; // not an overlay drop
+
+  // If dropped inside the sheet grid, let SheetRenderer handle it.
+  const inGrid = e.target && e.target.closest && e.target.closest('table.sheet-renderer');
+  if (inGrid) return;
+
+  e.preventDefault();
+  try {
+    const data = JSON.parse(payload);
+    const { field, index } = data || {};
+    if (!field || index == null) return;
+    const state = store.getState();
+    const mapping = { ...state.mapping };
+    const list = Array.isArray(mapping[field]) ? [...mapping[field]] : [];
+    if (index < 0 || index >= list.length) return;
+    list.splice(index, 1);
+    if (list.length > 0) mapping[field] = list; else delete mapping[field];
+    store.set('mapping', mapping);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Discard drop failed:', err);
+  }
+}
+
+document.addEventListener('dragover', handleGlobalDragOver);
+document.addEventListener('drop', handleGlobalDrop);

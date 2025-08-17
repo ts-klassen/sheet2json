@@ -55,7 +55,7 @@ export default class MappingPanel {
       // receives focus events.  tabindex="0" ensures the item participates in
       // the natural tab order without requiring any additional ARIA roles.
       li.tabIndex = 0;
-      li.style.margin = '4px 0';
+      li.style.margin = '0';
       li.style.cursor = 'grab';
       li.style.userSelect = 'none';
       li.style.webkitUserSelect = 'none';
@@ -133,6 +133,55 @@ export default class MappingPanel {
 
       this.ul.appendChild(li);
     });
+
+    // Trash chip removed – visible trash now lives in the controls bar
+
+    // Visible trash dropzone next to draggables (not a draggable chip)
+    if (this._trash && this._trash.parentNode) {
+      this._trash.parentNode.removeChild(this._trash);
+    }
+    const trash = document.createElement('li');
+    trash.className = 'trash-dropzone';
+    trash.setAttribute('role', 'button');
+    trash.setAttribute('aria-label', 'Drop a box here to delete it');
+    trash.textContent = '🗑 Trash';
+
+    const isOverlayMoveEvent = (e) => {
+      if (!e || !e.dataTransfer) return false;
+      const types = Array.from(e.dataTransfer.types || []);
+      return types.includes('application/x-overlay-move');
+    };
+    ['dragenter', 'dragover'].forEach((evt) => {
+      trash.addEventListener(evt, (e) => {
+        if (!isOverlayMoveEvent(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        trash.classList.add('active');
+      });
+    });
+    trash.addEventListener('dragleave', () => trash.classList.remove('active'));
+    trash.addEventListener('drop', (e) => {
+      if (!isOverlayMoveEvent(e)) return;
+      e.preventDefault();
+      trash.classList.remove('active');
+      try {
+        const payload = JSON.parse(e.dataTransfer.getData('application/x-overlay-move'));
+        const { field, index } = payload || {};
+        if (!field || index == null) return;
+        const state = store.getState();
+        const mapping2 = { ...state.mapping };
+        const list = Array.isArray(mapping2[field]) ? [...mapping2[field]] : [];
+        if (index < 0 || index >= list.length) return;
+        list.splice(index, 1);
+        if (list.length > 0) mapping2[field] = list; else delete mapping2[field];
+        store.set('mapping', mapping2);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Trash drop failed:', err);
+      }
+    });
+    this.ul.appendChild(trash);
+    this._trash = trash;
 
     // (Re-)initialise draggable sources. Safe to call multiple times – the
     // controller ignores subsequent invocations after the first.

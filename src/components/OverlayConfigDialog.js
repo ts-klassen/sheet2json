@@ -51,8 +51,14 @@ export default class OverlayConfigDialog {
     const propsForTitle = getSchemaProperties(schema) || {};
     const metaForTitle = propsForTitle[this.field] || {};
     const displayName = metaForTitle.description || metaForTitle.title || this.field;
-    title.textContent = `Movement for ${displayName}`;
+    title.textContent = `Settings for ${displayName}`;
     dialog.appendChild(title);
+
+    // Section header: Movement
+    const movementHeader = document.createElement('h4');
+    movementHeader.textContent = 'Movement';
+    movementHeader.style.margin = '0.5em 0 0.25em 0';
+    dialog.appendChild(movementHeader);
 
     const modeWrapper = document.createElement('div');
     modeWrapper.style.marginBottom = '0.75em';
@@ -228,11 +234,31 @@ export default class OverlayConfigDialog {
     // Actions
     const actions = document.createElement('div');
     actions.style.marginTop = '1em';
-    actions.style.textAlign = 'right';
+    actions.style.display = 'flex';
+    actions.style.justifyContent = 'space-between';
+
+    // Remove button (left)
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.textContent = 'Remove';
+    removeBtn.style.color = 'white';
+    removeBtn.style.background = '#d9534f';
+    removeBtn.style.border = 'none';
+    removeBtn.style.padding = '0.4em 0.6em';
+    removeBtn.style.borderRadius = '3px';
+    removeBtn.addEventListener('click', () => this._remove());
 
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
     saveBtn.textContent = 'Save';
+    // Green save button – higher contrast
+    saveBtn.style.color = '#fff';
+    saveBtn.style.background = '#2e7d32'; // darker green
+    saveBtn.style.border = '1px solid #1b5e20';
+    saveBtn.style.padding = '0.45em 0.75em';
+    saveBtn.style.borderRadius = '3px';
+    saveBtn.style.fontWeight = '600';
+    saveBtn.style.textShadow = '0 1px 0 rgba(0,0,0,0.2)';
     saveBtn.addEventListener('click', () =>
       this._save(stepRadio.input.checked, jumpRadio.input.checked, followRadio.input.checked, followFieldSelect.value, followIndexSelect.value, rowInput.value, colInput.value, scriptArea.value)
     );
@@ -241,10 +267,23 @@ export default class OverlayConfigDialog {
     cancelBtn.type = 'button';
     cancelBtn.textContent = 'Cancel';
     cancelBtn.style.marginLeft = '0.5em';
+    // Yellow cancel button
+    cancelBtn.style.color = '#000';
+    cancelBtn.style.background = '#f0ad4e';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.padding = '0.4em 0.6em';
+    cancelBtn.style.borderRadius = '3px';
     cancelBtn.addEventListener('click', () => this.destroy());
 
-    actions.appendChild(saveBtn);
-    actions.appendChild(cancelBtn);
+    const rightButtons = document.createElement('div');
+    rightButtons.style.display = 'inline-flex';
+    rightButtons.style.gap = '0.5em';
+    // Place Cancel before Save so Save sits at the far right
+    rightButtons.appendChild(cancelBtn);
+    rightButtons.appendChild(saveBtn);
+
+    actions.appendChild(removeBtn);
+    actions.appendChild(rightButtons);
     dialog.appendChild(actions);
 
     // Close on overlay click
@@ -315,5 +354,28 @@ export default class OverlayConfigDialog {
     if (this.overlay && this.overlay.parentNode) {
       this.overlay.parentNode.removeChild(this.overlay);
     }
+  }
+
+  _remove() {
+    try {
+      const state = store.getState();
+      const mapping = { ...state.mapping };
+      const list = Array.isArray(mapping[this.field]) ? [...mapping[this.field]] : [];
+      if (this.index < 0 || this.index >= list.length) {
+        this.destroy();
+        return;
+      }
+      list.splice(this.index, 1);
+      if (list.length > 0) {
+        mapping[this.field] = list;
+      } else {
+        delete mapping[this.field];
+      }
+      store.set('mapping', mapping);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to remove mapping', err);
+    }
+    this.destroy();
   }
 }

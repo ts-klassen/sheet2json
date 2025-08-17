@@ -20,10 +20,67 @@ body {
   position: sticky;
   top: 0;
   background: #ffffff;
-  padding: 0.5rem 0;
   z-index: 100;
-  /* Optional visual affordance – subtle shadow */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.controls-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+}
+
+.controls-bottom {
+  padding: 0.25rem 0.5rem 0.5rem 0.5rem;
+}
+
+.trash-dropzone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 2px dashed #d9534f;
+  color: #d9534f;
+  padding: 4px 8px;
+  border-radius: 4px;
+  user-select: none;
+  cursor: pointer;
+}
+
+.trash-dropzone.active {
+  background: #ffe6e6;
+  border-color: #c9302c;
+  color: #c9302c;
+}
+
+/* Mapping panel: compact, wraps across lines, sticky below controls */
+.mapping-panel { position: static; padding: 0; background: transparent; box-shadow: none; display: flex; align-items: center; gap: 0.5rem; }
+
+.mapping-panel ul { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; margin: 0; padding: 0; }
+
+.mapping-panel li {
+  display: inline-flex;
+  align-items: center;
+  margin: 0; /* spacing handled via gap */
+  padding: 2px 6px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+/* Ensure trash in the mapping panel looks like a trash, not a chip */
+.mapping-panel li.trash-dropzone {
+  border: 2px dashed #d9534f !important;
+  color: #d9534f;
+  background: transparent !important;
+  padding: 4px 8px;
+}
+
+.mapping-panel li.trash-dropzone.active {
+  background: #ffe6e6 !important;
+  border-color: #c9302c !important;
+  color: #c9302c;
 }
 
 /* Cells that were originally part of a merged block (not top-left). */
