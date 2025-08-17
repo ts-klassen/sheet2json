@@ -1,4 +1,5 @@
 import { store } from '../store.js';
+import { getSchemaProperties } from '../utils/schemaUtils.js';
 
 /**
  * Modal dialog to configure how a specific overlay moves when Confirm & Next
@@ -45,18 +46,26 @@ export default class OverlayConfigDialog {
     });
 
     const title = document.createElement('h3');
-    title.textContent = `Movement for ${this.field}`;
+    // Use display name from schema (description -> title -> field)
+    const schema = store.getState().schema;
+    const propsForTitle = getSchemaProperties(schema) || {};
+    const metaForTitle = propsForTitle[this.field] || {};
+    const displayName = metaForTitle.description || metaForTitle.title || this.field;
+    title.textContent = `Movement for ${displayName}`;
     dialog.appendChild(title);
 
     const modeWrapper = document.createElement('div');
     modeWrapper.style.marginBottom = '0.75em';
 
-    const stepRadio = this._makeRadio('mode', 'step', 'Row offset');
+    const stepRadio = this._makeRadio('mode', 'step', 'Exact offset');
     const jumpRadio = this._makeRadio('mode', 'jump', 'Jump to next value');
     const scriptRadio = this._makeRadio('mode', 'script', 'Custom JavaScript');
+    const followRadio = this._makeRadio('mode', 'follow', 'Follow another field');
 
-    modeWrapper.appendChild(stepRadio.wrapper);
+    // Order: Jump to next value (top), Exact offset, Follow, Custom JavaScript
     modeWrapper.appendChild(jumpRadio.wrapper);
+    modeWrapper.appendChild(stepRadio.wrapper);
+    modeWrapper.appendChild(followRadio.wrapper);
     modeWrapper.appendChild(scriptRadio.wrapper);
     dialog.appendChild(modeWrapper);
 
@@ -83,6 +92,22 @@ export default class OverlayConfigDialog {
     colInput.style.marginBottom = '0.5em';
     colLabel.appendChild(colInput);
 
+    // Follow controls
+    const followFieldLabel = document.createElement('label');
+    followFieldLabel.textContent = 'Follow field:';
+    followFieldLabel.style.display = 'none';
+    const followFieldSelect = document.createElement('select');
+    followFieldSelect.style.width = '100%';
+    followFieldSelect.style.marginBottom = '0.5em';
+    followFieldLabel.appendChild(followFieldSelect);
+
+    const followIndexLabel = document.createElement('label');
+    followIndexLabel.textContent = 'Follow index (1-based):';
+    followIndexLabel.style.display = 'none';
+    const followIndexSelect = document.createElement('select');
+    followIndexSelect.style.width = '100%';
+    followIndexLabel.appendChild(followIndexSelect);
+
     // JS textarea (custom script)
     const scriptArea = document.createElement('textarea');
     scriptArea.rows = 6;
@@ -92,17 +117,59 @@ export default class OverlayConfigDialog {
 
     dialog.appendChild(rowLabel);
     dialog.appendChild(colLabel);
+    dialog.appendChild(followFieldLabel);
+    dialog.appendChild(followIndexLabel);
     dialog.appendChild(scriptArea);
 
     // Load existing config
     const mapping = store.getState().mapping;
     const cfg = mapping?.[this.field]?.[this.index] || {};
+
+    // Populate follow field options from mapping keys that have at least one address
+    const fields = Object.keys(mapping || {}).filter((f) => (mapping[f] || []).length > 0);
+    const props = getSchemaProperties(store.getState().schema) || {};
+    // Default selection excludes current field to avoid obvious cycles, but allow if desired
+    followFieldSelect.innerHTML = '';
+    fields.forEach((f) => {
+      const opt = document.createElement('option');
+      opt.value = f;
+      const meta = props[f] || {};
+      opt.textContent = meta.description || meta.title || f;
+      followFieldSelect.appendChild(opt);
+    });
+
+    const populateIndexOptions = (fieldName) => {
+      followIndexSelect.innerHTML = '';
+      const count = (mapping[fieldName] || []).length;
+      for (let i = 0; i < count; i++) {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = String(i + 1);
+        followIndexSelect.appendChild(opt);
+      }
+    };
+    followFieldSelect.addEventListener('change', () => populateIndexOptions(followFieldSelect.value));
     if (typeof cfg.script === 'string') {
       scriptRadio.input.checked = true;
       rowLabel.style.display = 'none';
       colLabel.style.display = 'none';
       scriptArea.style.display = 'block';
       scriptArea.value = cfg.script;
+    } else if (cfg.follow && cfg.follow.field) {
+      followRadio.input.checked = true;
+      rowLabel.style.display = 'none';
+      colLabel.style.display = 'none';
+      scriptArea.style.display = 'none';
+      followFieldLabel.style.display = 'block';
+      followIndexLabel.style.display = 'block';
+      // Prefill follow selections
+      const f = cfg.follow.field;
+      if (fields.includes(f)) {
+        followFieldSelect.value = f;
+      }
+      populateIndexOptions(followFieldSelect.value || fields[0]);
+      const idx = Number.isFinite(cfg.follow.index) ? String(cfg.follow.index) : '0';
+      followIndexSelect.value = idx;
     } else if (cfg.jumpNext) {
       jumpRadio.input.checked = true;
       rowInput.value = Number.isFinite(cfg.dy) ? cfg.dy : 1;
@@ -131,6 +198,8 @@ export default class OverlayConfigDialog {
       rowLabel.style.display = 'none';
       colLabel.style.display = 'none';
         scriptArea.style.display = 'block';
+        followFieldLabel.style.display = 'none';
+        followIndexLabel.style.display = 'none';
       }
     });
     jumpRadio.input.addEventListener('change', () => {
@@ -138,6 +207,21 @@ export default class OverlayConfigDialog {
         rowLabel.style.display = 'block';
         colLabel.style.display = 'block';
         scriptArea.style.display = 'none';
+        followFieldLabel.style.display = 'none';
+        followIndexLabel.style.display = 'none';
+      }
+    });
+    followRadio.input.addEventListener('change', () => {
+      if (followRadio.input.checked) {
+        rowLabel.style.display = 'none';
+        colLabel.style.display = 'none';
+        scriptArea.style.display = 'none';
+        followFieldLabel.style.display = 'block';
+        followIndexLabel.style.display = 'block';
+        if (!followFieldSelect.value && fields.length) {
+          followFieldSelect.value = fields[0];
+        }
+        populateIndexOptions(followFieldSelect.value);
       }
     });
 
@@ -150,7 +234,7 @@ export default class OverlayConfigDialog {
     saveBtn.type = 'button';
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', () =>
-      this._save(stepRadio.input.checked, jumpRadio.input.checked, rowInput.value, colInput.value, scriptArea.value)
+      this._save(stepRadio.input.checked, jumpRadio.input.checked, followRadio.input.checked, followFieldSelect.value, followIndexSelect.value, rowInput.value, colInput.value, scriptArea.value)
     );
 
     const cancelBtn = document.createElement('button');
@@ -192,13 +276,20 @@ export default class OverlayConfigDialog {
     return { wrapper, input };
   }
 
-  _save(isStepMode, isJumpMode, rowVal, colVal, scriptValue) {
+  _save(isStepMode, isJumpMode, isFollowMode, followField, followIndex, rowVal, colVal, scriptValue) {
     const state = store.getState();
     const mapping = { ...state.mapping };
     mapping[this.field] = [...(mapping[this.field] || [])];
     const base = { ...mapping[this.field][this.index] };
 
-    if (isStepMode || isJumpMode) {
+    if (isFollowMode) {
+      base.follow = { field: String(followField || ''), index: parseInt(followIndex, 10) || 0 };
+      delete base.dy;
+      delete base.dx;
+      delete base.step;
+      delete base.script;
+      delete base.jumpNext;
+    } else if (isStepMode || isJumpMode) {
       const dy = parseInt(rowVal, 10);
       const dx = parseInt(colVal, 10);
       base.dy = Number.isFinite(dy) ? dy : 1;
@@ -206,11 +297,13 @@ export default class OverlayConfigDialog {
       base.jumpNext = !!isJumpMode;
       delete base.step;
       delete base.script;
+      delete base.follow;
     } else {
       base.script = String(scriptValue || '').trim();
       delete base.dy;
       delete base.dx;
       delete base.jumpNext;
+      delete base.follow;
     }
 
     mapping[this.field][this.index] = base;

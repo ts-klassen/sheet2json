@@ -382,8 +382,50 @@ export default class SheetRenderer {
       if (duplicate) return;
 
       const prev = list[index] || {};
+      const dr = row - (prev.row ?? row);
+      const dc = col - (prev.col ?? col);
+
+      // Update leader
       list[index] = { ...prev, sheet, row, col };
       mapping[field] = list;
+
+      // Follow: move any overlays configured to follow this leader by same delta
+      try {
+        const wb = store.getState().workbook;
+        const applyDelta = (addr, deltaR, deltaC) => {
+          const targetSheet = addr.sheet || (wb && wb.activeSheet) || sheet;
+          const grid = (wb && wb.data && wb.data[targetSheet]) || [];
+          const maxRows = grid.length;
+          const newRow = (addr.row ?? 0) + deltaR;
+          const newCol = (addr.col ?? 0) + deltaC;
+          if (newRow < 0 || newRow >= maxRows) return null;
+          const rowArr = grid[newRow] || [];
+          if (newCol < 0 || newCol >= rowArr.length) return null;
+          return { ...addr, row: newRow, col: newCol };
+        };
+
+        Object.entries(mapping).forEach(([fField, fListRaw]) => {
+          const fList = Array.isArray(fListRaw) ? [...fListRaw] : [];
+          let changed = false;
+          fList.forEach((fAddr, fIdx) => {
+            if (!fAddr || !fAddr.follow) return;
+            if (fAddr.follow.field !== field) return;
+            if (Number(fAddr.follow.index) !== Number(index)) return;
+            const moved = applyDelta(fAddr, dr, dc);
+            if (!moved) return;
+            // Prevent duplicates within same field (excluding the follower itself)
+            const dup = fList.some((a, i) => i !== fIdx && a.sheet === moved.sheet && a.row === moved.row && a.col === moved.col);
+            if (dup) return;
+            fList[fIdx] = moved;
+            changed = true;
+          });
+          if (changed) mapping[fField] = fList;
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Follower move failed:', err);
+      }
+
       store.set('mapping', mapping);
 
       return; // Done – handled overlay move.

@@ -10,6 +10,7 @@
 
 import { store } from '../store.js';
 import { colourForField } from '../utils/color.js';
+import { getSchemaProperties } from '../utils/schemaUtils.js';
 import DraggableController, {
   OVERLAY_MOVED
 } from '../dnd/DraggableController.js';
@@ -69,12 +70,13 @@ export default class OverlayManager {
       this.container.removeChild(this.container.firstChild);
     }
 
-    const { workbook, mapping } = state;
+    const { workbook, mapping, schema } = state;
     if (!workbook || !mapping) return;
 
     const activeSheet = workbook.activeSheet;
     if (!activeSheet) return;
 
+    const props = getSchemaProperties(schema) || {};
     Object.entries(mapping).forEach(([field, addresses]) => {
       addresses.forEach((addr, index) => {
         if (addr.sheet !== activeSheet) return; // Only render overlays for the visible sheet
@@ -101,7 +103,10 @@ export default class OverlayManager {
           userSelect: 'none'
         });
 
-        overlay.textContent = field;
+        const desc = props && props[field] && typeof props[field].description === 'string'
+          ? props[field].description
+          : null;
+        overlay.textContent = desc || field;
 
         // Double-click opens per-overlay configuration dialog
         overlay.addEventListener('dblclick', () => {

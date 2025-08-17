@@ -47,6 +47,9 @@ export function shiftMappingDown() {
   }
 
   const newMapping = {};
+  const leaderDelta = new Map(); // key `${field}:${index}` -> { dr, dc }
+  const followers = []; // { field, index, addr }
+
   Object.entries(mapping).forEach(([field, addresses]) => {
     const shifted = addresses
       .map((addr, index) => {
@@ -57,7 +60,11 @@ export function shiftMappingDown() {
         let newRow = addr.row;
         let newCol = addr.col;
 
-        if (typeof addr.script === 'string' && addr.script.trim()) {
+        if (addr.follow && addr.follow.field) {
+          // Defer follow processing to second pass
+          followers.push({ field, index, addr });
+          return null;
+        } else if (typeof addr.script === 'string' && addr.script.trim()) {
           try {
             // eslint-disable-next-line no-new-func
             const fn = new Function(
@@ -115,8 +122,11 @@ export function shiftMappingDown() {
           }
         }
 
-        return { ...addr, row: newRow, col: newCol };
+        const moved = { ...addr, row: newRow, col: newCol };
+        leaderDelta.set(`${field}:${index}`, { dr: newRow - addr.row, dc: newCol - addr.col });
+        return moved;
       })
+      .filter((addr) => addr) // drop deferred followers
       .filter((addr) => {
         const sheetName = addr.sheet || workbook.activeSheet;
         const grid = (workbook.data && workbook.data[sheetName]) || [];
@@ -127,6 +137,27 @@ export function shiftMappingDown() {
         return true;
       });
     if (shifted.length) newMapping[field] = shifted;
+  });
+
+  // Second pass: process followers
+  followers.forEach(({ field, index, addr }) => {
+    const key = `${addr.follow.field}:${addr.follow.index}`;
+    const delta = leaderDelta.get(key);
+    let newRow = addr.row;
+    let newCol = addr.col;
+    if (delta) {
+      newRow += delta.dr;
+      newCol += delta.dc;
+    }
+    const sheetName = addr.sheet || workbook.activeSheet;
+    const grid = (workbook.data && workbook.data[sheetName]) || [];
+    const maxRows = grid.length;
+    if (newRow < 0 || newRow >= maxRows) return;
+    const rowArr = grid[newRow] || [];
+    if (newCol < 0 || newCol >= rowArr.length) return;
+    const moved = { ...addr, row: newRow, col: newCol };
+    if (!newMapping[field]) newMapping[field] = [];
+    newMapping[field].push(moved);
   });
 
   store.set('mapping', newMapping);
