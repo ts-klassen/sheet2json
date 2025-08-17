@@ -176,3 +176,47 @@ Note: The previous mapping templates feature (save/load) has been removed.
 • Performance feels sluggish on large sheets?  Run `npm test -- tests/performance.test.js` and check the scripting budget (< 200 ms for 100 drags).  If the budget fails, profile with DevTools and watch for layout thrashing.
 
 For more details refer to `workbench/specs/draggable-field-mapping/requirements.md` and `design.md`.
+
+---
+
+## Public API (Stable)
+
+This tool exposes a small, neutral, and versioned public interface that hosts MUST use. Internal DOM, labels, and private helpers may change at any time; the API below must remain stable. Additive changes may be introduced over time; breaking changes require a major version bump.
+
+Surface (window.Sheet2JSON)
+- VERSION: semantic API version string (e.g., '1.0.0').
+- getJson(): synchronously returns the current exported JSON; throws if workbook/schema/mapping is not ready.
+- onConfirm(callback): subscribe to updates after each successful confirm; returns an unsubscribe function. Subscriber exceptions are ignored.
+
+Events (document)
+- 'sheet2json:ready': fired once when the API becomes available; detail: { version }.
+- 'sheet2json:confirm': fired after each successful confirm; detail: the latest JSON object.
+
+Semantics
+- Successful confirm means one of:
+  - advanceField mode: current field advanced (at least one cell mapped).
+  - shiftRow mode: snapshot taken and mapping shifted (mapping non-empty).
+- On success: onConfirm subscribers are called first, then 'sheet2json:confirm' is dispatched. If JSON generation fails, neither fires.
+
+Access model
+- Same-origin only: hosts should call `window.Sheet2JSON` on the opened tab/window reference. Cross-origin messaging is not part of this API.
+
+Example (host tab)
+```js
+const w = window.open('/qna/static/sheet2json/index.html?schema=...');
+const t = setInterval(() => {
+  if (!w || w.closed) { clearInterval(t); return; }
+  if (w.Sheet2JSON) {
+    clearInterval(t);
+    const off = w.Sheet2JSON.onConfirm((json) => {
+      console.log('Confirmed JSON:', json);
+    });
+    // Optional on-demand fetch:
+    // const current = w.Sheet2JSON.getJson();
+  }
+}, 250);
+```
+
+Contract
+- Do not rely on internal implementation details; use only the API/events above.
+- The API is versioned; hosts may check `Sheet2JSON.VERSION` to gate features.

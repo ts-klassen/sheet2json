@@ -9,7 +9,6 @@ import { loadWorkbookFile } from './utils/workbookLoader.js';
 import './autoDetector.js';
 import SheetRenderer from './components/SheetRenderer.js';
 import OverlayManager from './components/OverlayManager.js';
-import { buildJson } from './utils/exporter.js';
 import { advanceCurrentField, shiftMappingDown } from './utils/mappingUtils.js';
 import ExportDialog from './components/ExportDialog.js';
 import '../styles/styles.css';
@@ -67,6 +66,95 @@ async function loadSchemaFromQuery() {
 }
 
 loadSchemaFromQuery();
+
+// ===========================================================================
+// PUBLIC INTERFACE (STABLE) — DO NOT BREAK
+// ---------------------------------------------------------------------------
+// This module exposes a small, neutral, and versioned public API for
+// integrations. Host applications MUST use ONLY this interface. Internal DOM,
+// labels, and private functions may change at any time; the API below MUST
+// remain backward compatible. If expanded, bump VERSION and preserve existing
+// behavior.
+//
+// API surface (attached to window.Sheet2JSON):
+//   - VERSION: string — semantic API version (e.g. '1.0.0').
+//   - getJson(): object — returns current exported JSON, or throws if not ready.
+//   - onConfirm(callback): function — subscribes to updates after each confirm
+//       action. Returns an unsubscribe function. Subscriber errors are ignored.
+//
+// Additionally, two document-level CustomEvents are dispatched:
+//   - 'sheet2json:ready'   — fired once when the API becomes available.
+//       detail: { version: string }
+//   - 'sheet2json:confirm' — fired after each successful confirm.
+//       detail: <json object>
+//
+// IMPORTANT:
+//   - This interface is intentionally neutral (no app-specific details).
+//   - Do NOT remove or rename these members/events. Additive changes only.
+// ===========================================================================
+
+import { buildJson } from './utils/exporter.js';
+
+const __PUBLIC_API_VERSION = '1.0.0';
+const __confirmSubscribers = new Set();
+
+function __dispatchReady(version) {
+  try {
+    document.dispatchEvent(
+      new CustomEvent('sheet2json:ready', { detail: { version } })
+    );
+  } catch (_) { /* ignore */ }
+}
+
+function __dispatchConfirm(json) {
+  try {
+    document.dispatchEvent(
+      new CustomEvent('sheet2json:confirm', { detail: json })
+    );
+  } catch (_) { /* ignore */ }
+}
+
+function __notifyConfirm() {
+  let json;
+  try {
+    json = buildJson();
+  } catch (_) {
+    json = null; // best-effort; never throw from notifier
+  }
+  if (json != null) {
+    __confirmSubscribers.forEach((cb) => {
+      try { cb(json); } catch (_) { /* ignore subscriber errors */ }
+    });
+    __dispatchConfirm(json);
+  }
+}
+
+function __ensurePublicApi() {
+  if (typeof window === 'undefined') return;
+  if (window.Sheet2JSON && typeof window.Sheet2JSON === 'object') {
+    // Already defined — preserve the first definition for stability.
+    return;
+  }
+  const api = Object.freeze({
+    VERSION: __PUBLIC_API_VERSION,
+    getJson: () => buildJson(),
+    onConfirm: (cb) => {
+      if (typeof cb !== 'function') {
+        throw new TypeError('onConfirm(callback) requires a function');
+      }
+      __confirmSubscribers.add(cb);
+      return () => __confirmSubscribers.delete(cb);
+    }
+  });
+  Object.defineProperty(window, 'Sheet2JSON', {
+    value: api,
+    writable: false,
+    configurable: false
+  });
+  __dispatchReady(api.VERSION);
+}
+
+__ensurePublicApi();
 // Control buttons – persists ("sticky") at the top of the viewport so the
 // primary workflow actions remain accessible even when the user scrolls the
 // worksheet far down.  The actual positioning rules live in the global
@@ -113,6 +201,9 @@ const confirmNextBtn = makeButton('Confirm & Next', () => {
         if (!success) {
           // eslint-disable-next-line no-alert
           alert('Please map at least one cell for the current field before continuing.');
+        } else {
+          // Public interface notification: a successful confirm occurred.
+          __notifyConfirm();
         }
       } else {
         // Default & "shiftRow" path – always snapshot & shift mapping down.
@@ -123,6 +214,8 @@ const confirmNextBtn = makeButton('Confirm & Next', () => {
           return;
         }
         shiftMappingDown();
+        // Public interface notification: a successful confirm occurred.
+        __notifyConfirm();
       }
     } catch (err) {
       // eslint-disable-next-line no-alert
