@@ -108,6 +108,7 @@ loadSchemaFromQuery();
 // ===========================================================================
 
 import { buildJson, findMissingRequiredFields } from './utils/exporter.js';
+import { getSchemaProperties } from './utils/schemaUtils.js';
 
 const __PUBLIC_API_VERSION = '1.1.0';
 const __confirmSubscribers = new Set();
@@ -260,6 +261,11 @@ controlsTop.appendChild(
       const state = store.getState();
       const snapshots = Array.isArray(state.records) ? state.records : [];
       const schema = state.schema;
+      const props = getSchemaProperties(schema) || {};
+      const toDisplay = (field) => {
+        const meta = props[field] || {};
+        return meta.description || meta.title || field;
+      };
       // Aggregate missing fields across all snapshots (union)
       const missingSet = new Set();
       if (snapshots.length > 0) {
@@ -272,7 +278,7 @@ controlsTop.appendChild(
       }
 
       if (missingSet.size > 0) {
-        const items = Array.from(missingSet);
+        const items = Array.from(missingSet).map(toDisplay);
         const proceed = await confirmDialog({
           title: 'Missing required fields',
           message: 'The following required fields are unmapped:',
@@ -313,11 +319,16 @@ const confirmNextBtn = makeButton('Confirm & Next', async () => {
     }
     // Warn on missing required fields for this record; allow force-continue
     const missing = findMissingRequiredFields(state.schema, mapping);
+    const props = getSchemaProperties(state.schema) || {};
+    const toDisplay = (field) => {
+      const meta = props[field] || {};
+      return meta.description || meta.title || field;
+    };
     if (missing.length > 0) {
       const proceed = await confirmDialog({
         title: 'Missing required fields',
         message: 'The following required fields are unmapped for this record:',
-        items: missing,
+        items: missing.map(toDisplay),
         note: 'Continue anyway?',
         confirmText: 'Continue',
         cancelText: 'Cancel'

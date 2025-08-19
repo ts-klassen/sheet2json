@@ -82,7 +82,10 @@ export function findMissingRequiredFields(schema, mapping) {
     if (!Object.prototype.hasOwnProperty.call(props, field)) return;
     const prop = props[field] || {};
     const list = Array.isArray(mapping?.[field]) ? mapping[field] : [];
-    if (!list.length) {
+    // Array fields are allowed to be unmapped and will export as []
+    // (see mappingToObject). Do not warn for these.
+    const isArray = prop.type === 'array';
+    if (!list.length && !isArray) {
       missing.push(field);
     }
   });
