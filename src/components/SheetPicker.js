@@ -9,6 +9,8 @@ import { parseA1Range, formatA1Range } from '../utils/a1.js';
 export default class SheetPicker {
   constructor({ parent = document.body } = {}) {
     this.parent = parent;
+    // Prevent multiple stacked invalid-range dialogs
+    this._invalidRangeDialogOpen = false;
 
     // Container to host sheet selector/name and range input side by side
     this.container = document.createElement('div');
@@ -142,12 +144,20 @@ export default class SheetPicker {
     const str = this.rangeInput.value.trim();
     const vr = parseA1Range(str);
     if (!vr) {
-      import('../i18n/index.js').then(({ t }) => confirmDialog({
-        title: t('sheet.invalid_range_title'),
-        message: t('sheet.invalid_range_message'),
-        confirmText: t('dialogs.ok'),
-        cancelText: t('dialogs.dismiss')
-      }));
+      if (this._invalidRangeDialogOpen) return;
+      this._invalidRangeDialogOpen = true;
+      import('../i18n/index.js')
+        .then(({ t }) => confirmDialog({
+          title: t('sheet.invalid_range_title'),
+          message: t('sheet.invalid_range_message'),
+          confirmText: t('dialogs.ok'),
+          cancelText: t('dialogs.dismiss')
+        }))
+        .catch(() => {})
+        .then(() => {
+          this._invalidRangeDialogOpen = false;
+          try { this.rangeInput.focus(); } catch (_) { /* ignore */ }
+        });
       return;
     }
     store.set('viewRange', vr);
