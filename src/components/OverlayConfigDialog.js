@@ -226,10 +226,21 @@ export default class OverlayConfigDialog {
     const populateFollowIndexOptions = (fieldName) => {
       followIndexSelect.innerHTML = '';
       const count = (mapping[fieldName] || []).length;
-      for (let i = 0; i < count; i++) {
+      const arrayLike = isArrayField(fieldName);
+      if (arrayLike) {
+        followIndexSelect.disabled = false;
+        for (let i = 0; i < count; i++) {
+          const opt = document.createElement('option');
+          opt.value = String(i);
+          opt.textContent = String(i + 1);
+          followIndexSelect.appendChild(opt);
+        }
+      } else {
+        // Scalar follow field -> fixed single index, disable select
+        followIndexSelect.disabled = true;
         const opt = document.createElement('option');
-        opt.value = String(i);
-        opt.textContent = String(i + 1);
+        opt.value = '0';
+        opt.textContent = '1';
         followIndexSelect.appendChild(opt);
       }
     };
