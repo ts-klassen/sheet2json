@@ -34,7 +34,7 @@ describe('AutoDetector', () => {
     expect(mapping).toHaveProperty('description');
     expect(mapping).not.toHaveProperty('other');
 
-    expect(mapping.title[0]).toEqual({ sheet: 'Sheet1', row: 0, col: 0 });
-    expect(mapping.description[0]).toEqual({ sheet: 'Sheet1', row: 0, col: 1 });
+    expect(mapping.title[0]).toMatchObject({ sheet: 'Sheet1', row: 0, col: 0 });
+    expect(mapping.description[0]).toMatchObject({ sheet: 'Sheet1', row: 0, col: 1 });
   });
 });

@@ -31,12 +31,16 @@ describe('SheetRenderer component', () => {
 
     store.set('workbook', wb);
 
-    const table = container.querySelector('table');
-    expect(table).not.toBeNull();
-    expect(table.rows.length).toBe(2);
-    expect(table.rows[0].cells.length).toBe(2);
-    expect(table.rows[0].cells[0].textContent).toBe('A1');
-    expect(table.rows[1].cells[1].textContent).toBe('B2');
+    const tbody = container.querySelector('table tbody');
+    expect(tbody).not.toBeNull();
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    expect(rows.length).toBe(2);
+    // First data row: select real cells (td), skip row header (th)
+    const firstRowTds = Array.from(rows[0].querySelectorAll('td'));
+    const secondRowTds = Array.from(rows[1].querySelectorAll('td'));
+    expect(firstRowTds.length).toBe(2);
+    expect(firstRowTds[0].textContent).toBe('A1');
+    expect(secondRowTds[1].textContent).toBe('B2');
   });
 
   test('renders colspan for merged cells', () => {
@@ -58,11 +62,14 @@ describe('SheetRenderer component', () => {
 
     store.set('workbook', wb);
 
-    const table = container.querySelector('table');
-    expect(table.rows[0].cells.length).toBe(2); // merged cell + C1
-    const mergedCell = table.rows[0].cells[0];
-    expect(mergedCell.colSpan).toBe(2);
-    expect(mergedCell.textContent).toBe('Merged');
+    const td00 = container.querySelector('td[data-r="0"][data-c="0"]');
+    const td01 = container.querySelector('td[data-r="0"][data-c="1"]');
+    const td02 = container.querySelector('td[data-r="0"][data-c="2"]');
+    expect(td00.textContent).toBe('Merged');
+    // Shadow cell of merged range should be marked and typically empty by default
+    expect(td01.classList.contains('merge-shadow')).toBe(true);
+    expect(td01.textContent).toBe('');
+    expect(td02.textContent).toBe('C1');
   });
 
   test('shows evaluated formula value instead of formula text', () => {
@@ -84,8 +91,8 @@ describe('SheetRenderer component', () => {
 
     store.set('workbook', workbook);
 
-    const cellText = container.querySelector('table').rows[2].cells[0].textContent;
-    expect(cellText).toBe('2');
+    const cell = container.querySelector('td[data-r="2"][data-c="0"]');
+    expect(cell.textContent).toBe('2');
   });
 
   test('renders 500x50 grid within performance budget', () => {

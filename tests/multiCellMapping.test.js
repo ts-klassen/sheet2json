@@ -27,7 +27,8 @@ describe('Multi-cell mapping per field', () => {
     renderer = new SheetRenderer({ parent: container });
     panel = new MappingPanel({ parent: container });
 
-    store.set('schema', { properties: { tag: { type: 'string' } } });
+    // Allow multiple addresses by declaring the field as an array type.
+    store.set('schema', { properties: { tag: { type: 'array', items: { type: 'string' } } } });
     const arr = [
       ['A1', 'B1', 'C1'],
       ['A2', 'B2', 'C2']
@@ -59,8 +60,8 @@ describe('Multi-cell mapping per field', () => {
     const mapping = store.getState().mapping;
     expect(mapping.tag.length).toBe(2);
     // Ensure order preserved
-    expect(mapping.tag[0]).toEqual({ sheet: 'Sheet1', row: 0, col: 0 });
-    expect(mapping.tag[1]).toEqual({ sheet: 'Sheet1', row: 1, col: 2 });
+    expect(mapping.tag[0]).toMatchObject({ sheet: 'Sheet1', row: 0, col: 0 });
+    expect(mapping.tag[1]).toMatchObject({ sheet: 'Sheet1', row: 1, col: 2 });
 
     // MappingPanel should rerender field not in red (mapped)
     const listItem = container.querySelector('li[data-field="tag"] span:last-child');

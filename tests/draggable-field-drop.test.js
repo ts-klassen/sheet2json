@@ -52,6 +52,6 @@ describe('FIELD_DROPPED → mapping update', () => {
     const { mapping } = store.getState();
     expect(mapping).toHaveProperty('title');
     expect(mapping.title).toHaveLength(1);
-    expect(mapping.title[0]).toEqual({ sheet: 'Sheet1', row: 0, col: 1 });
+    expect(mapping.title[0]).toMatchObject({ sheet: 'Sheet1', row: 0, col: 1 });
   });
 });

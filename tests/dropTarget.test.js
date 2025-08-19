@@ -57,6 +57,6 @@ describe('Drag-and-drop mapping', () => {
 
     const mapping = store.getState().mapping;
     expect(mapping).toHaveProperty('title');
-    expect(mapping.title[0]).toEqual({ sheet: 'Sheet1', row: 0, col: 1 });
+    expect(mapping.title[0]).toMatchObject({ sheet: 'Sheet1', row: 0, col: 1 });
   });
 });

@@ -40,6 +40,8 @@ export default class OverlayManager {
     // Keep references so we can tear down listeners on destroy().
     this._onStoreChange = this._onStoreChange.bind(this);
     this._onOverlayMoved = this._onOverlayMoved.bind(this);
+    this._repositionOverlays = this._repositionOverlays.bind(this);
+    this._onWindowResize = this._onWindowResize.bind(this);
 
     this.unsubscribe = store.subscribe(this._onStoreChange);
     DraggableController.addEventListener(OVERLAY_MOVED, this._onOverlayMoved);
@@ -48,6 +50,12 @@ export default class OverlayManager {
     // can safely trigger it even if another component has already initialised
     // the controller.
     DraggableController.init({ overlaysRoot: this.container });
+
+    // Observe geometry changes of the sheet table so overlays keep in sync
+    // with cell size changes (e.g. expand-on-click, range changes, etc.).
+    this._initResizeObserver();
+    // Also respond to viewport resizes which shift bounding rects.
+    window.addEventListener('resize', this._onWindowResize);
   }
 
   /* -------------------------------------------------------------------- */
@@ -55,8 +63,19 @@ export default class OverlayManager {
   /* -------------------------------------------------------------------- */
 
   _onStoreChange(newState, prevState) {
-    if (newState.mapping !== (prevState && prevState.mapping)) {
+    const mappingChanged = newState.mapping !== (prevState && prevState.mapping);
+    const prevWb = prevState ? prevState.workbook : null;
+    const workbookChanged = newState.workbook !== prevWb;
+    const activeChanged =
+      newState.workbook && prevWb && newState.workbook.activeSheet !== prevWb.activeSheet;
+    const viewRangeChanged = prevState && newState.viewRange !== prevState.viewRange;
+
+    // Rebuild overlays when mapping changes or the visible grid changed
+    // (workbook/active sheet/view range) so positions remain accurate.
+    if (mappingChanged || workbookChanged || activeChanged || viewRangeChanged) {
       this._renderOverlays(newState);
+      // After DOM mutations settle, perform a precise reposition.
+      requestAnimationFrame(this._repositionOverlays);
     }
   }
 
@@ -177,6 +196,9 @@ export default class OverlayManager {
         this.container.appendChild(overlay);
       });
     });
+
+    // Ensure final sizing/position after all overlays inserted
+    this._repositionOverlays();
   }
 
   /* -------------------------------------------------------------------- */
@@ -215,6 +237,49 @@ export default class OverlayManager {
   destroy() {
     this.unsubscribe && this.unsubscribe();
     DraggableController.removeEventListener(OVERLAY_MOVED, this._onOverlayMoved);
+    if (this._ro) try { this._ro.disconnect(); } catch (_) { /* ignore */ }
+    window.removeEventListener('resize', this._onWindowResize);
     if (this.container.parentNode) this.container.parentNode.removeChild(this.container);
+  }
+
+  /* -------------------------------------------------------------------- */
+  /* Geometry syncing                                                     */
+  /* -------------------------------------------------------------------- */
+
+  _initResizeObserver() {
+    try {
+      const table = document.querySelector('table.sheet-renderer');
+      if (!table || typeof ResizeObserver === 'undefined') return;
+      this._ro = new ResizeObserver(() => {
+        // Table or its rows resized → realign overlays
+        this._repositionOverlays();
+      });
+      this._ro.observe(table);
+    } catch (_) {
+      // No-op if ResizeObserver is unavailable
+    }
+  }
+
+  _onWindowResize() {
+    this._repositionOverlays();
+  }
+
+  _repositionOverlays() {
+    const containerRect = this.container.getBoundingClientRect();
+    const overlays = Array.from(this.container.querySelectorAll('.overlay'));
+    overlays.forEach((ov) => {
+      const r = ov.dataset && Number(ov.dataset.r);
+      const c = ov.dataset && Number(ov.dataset.c);
+      if (!Number.isFinite(r) || !Number.isFinite(c)) return;
+      const td = document.querySelector(
+        `table.sheet-renderer td[data-r="${r}"][data-c="${c}"]`
+      );
+      if (!td) return;
+      const rect = td.getBoundingClientRect();
+      ov.style.top = `${rect.top - containerRect.top}px`;
+      ov.style.left = `${rect.left - containerRect.left}px`;
+      ov.style.width = `${rect.width}px`;
+      ov.style.height = `${rect.height}px`;
+    });
   }
 }
