@@ -24,16 +24,16 @@ controls.trash_aria:
   ja: "ここにドロップすると削除します"
 file.drop_aria:
   en: "Upload file. Drop here or press Enter to choose file."
-  ja: "ファイルをアップロード。ここにドロップするか、Enterで選択"
+  ja: "ここにファイルをドロップするか、Enter キーで選択"
 file.drop_text:
   en: "Drop a workbook here or click to choose"
-  ja: "ブックをここにドロップ、またはクリックして選択"
+  ja: "ここにファイルをドロップするか、クリックで選択"
 sheet.range_label:
   en: "Range:"
   ja: "範囲:"
 sheet.hover_hint:
   en: "[hover me; or click to expand]"
-  ja: "［ホバーまたはクリックで展開］"
+  ja: "［カーソルを近づけるとプレビュー、クリックで展開］"
 sheet.invalid_range_title:
   en: "Invalid range"
   ja: "無効な範囲"
@@ -48,7 +48,7 @@ dialogs.missing_required_message_all:
   ja: "未設定の必須項目:"
 dialogs.missing_required_message_record:
   en: "The following required fields are unmapped for this record:"
-  ja: "このレコードで未設定の必須項目:"
+  ja: "このレコードで未設定の必須項目があります。"
 dialogs.missing_required_note:
   en: "Continue anyway?"
   ja: "このまま続行しますか？"
@@ -57,7 +57,7 @@ dialogs.nothing_to_confirm_title:
   ja: "確定する内容がありません"
 dialogs.nothing_to_confirm_message:
   en: "Map at least one cell before continuing."
-  ja: "続行するには、少なくとも1つのセルをマッピングしてください。"
+  ja: "続行するには、1 つ以上のセルを指定してください。"
 dialogs.continue:
   en: "Continue"
   ja: "続行"
@@ -72,16 +72,16 @@ dialogs.dismiss:
   ja: "閉じる"
 errors.inspect_title:
   en: "Inspect JSON failed"
-  ja: "JSON の表示に失敗"
+  ja: "JSON を表示できませんでした"
 errors.inspect_message:
   en: "Failed to inspect JSON"
   ja: "JSON を表示できませんでした"
 errors.confirm_title:
   en: "Confirm failed"
-  ja: "確定に失敗"
+  ja: "確定できませんでした"
 errors.confirm_message:
   en: "Confirm failed"
-  ja: "確定に失敗しました"
+  ja: "確定できませんでした"
 errors.undo_title:
   en: "Undo failed"
   ja: "元に戻せませんでした"
@@ -90,13 +90,13 @@ errors.undo_message:
   ja: "元に戻せませんでした"
 errors.update_failed_title:
   en: "Update failed"
-  ja: "更新に失敗"
+  ja: "設定を更新できませんでした"
 errors.update_failed_message:
   en: "Failed to update setting"
   ja: "設定を更新できませんでした"
 errors.load_schema_title:
   en: "Failed to load schema"
-  ja: "スキーマの読み込みに失敗"
+  ja: "スキーマを読み込めませんでした"
 errors.load_schema_message:
   en: "Failed to load schema from URL"
   ja: "URL からスキーマを読み込めませんでした"
@@ -106,9 +106,6 @@ export.download:
 export.close:
   en: "Close"
   ja: "閉じる"
-export.filename:
-  en: "export.json"
-  ja: "export.json"
 overlay.identity:
   en: "Identity"
   ja: "識別情報"
@@ -120,13 +117,13 @@ overlay.field:
   ja: "フィールド:"
 overlay.index_1based:
   en: "Index (1-based):"
-  ja: "インデックス（1始まり）:"
+  ja: "番号（1〜）"
 overlay.movement:
   en: "Movement"
   ja: "移動"
 overlay.mode_exact:
   en: "Exact offset"
-  ja: "固定オフセット"
+  ja: "固定の移動量"
 overlay.mode_jump:
   en: "Jump to next value"
   ja: "次の値に移動"
@@ -144,10 +141,10 @@ overlay.col_delta:
   ja: "列の増分:"
 overlay.follow_field:
   en: "Follow field:"
-  ja: "対象フィールド:"
+  ja: "追従先のフィールド:"
 overlay.follow_index_1based:
   en: "Follow index (1-based):"
-  ja: "対象インデックス（1始まり）:"
+  ja: "追従先の番号（1〜）"
 overlay.remove:
   en: "Remove"
   ja: "削除"

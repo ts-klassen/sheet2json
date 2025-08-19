@@ -29,20 +29,17 @@ export default class ExportDialog {
     const download = document.createElement('a');
     try {
       import('../i18n/index.js').then(({ t, onChange }) => {
-        const apply = () => {
-          download.textContent = t('export.download');
-          download.download = t('export.filename');
-        };
+        const apply = () => { download.textContent = t('export.download'); };
         apply();
         this._i18nUnsub = onChange(apply);
       });
     } catch (_) {
       download.textContent = 'Download JSON';
-      download.download = 'export.json';
     }
+    download.download = 'export.json';
     download.style.display = 'inline-block';
     download.style.marginTop = '1em';
-    // href set below; filename set by i18n above
+    // href set below; filename fixed to export.json
     const blob = new Blob([JSON.stringify(jsonObj, null, 2)], { type: 'application/json' });
     download.href = URL.createObjectURL(blob);
 
