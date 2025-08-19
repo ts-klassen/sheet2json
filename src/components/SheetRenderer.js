@@ -233,7 +233,13 @@ export default class SheetRenderer {
           // Normal (black) cells: show full text up to 100 chars; if longer,
           // display a hint and reveal full value on hover.
           if (text.length > 100) {
-            td.textContent = '[hover me; or click to expand]';
+            try {
+              import('../i18n/index.js').then(({ t }) => {
+                td.textContent = t('sheet.hover_hint');
+              });
+            } catch (_) {
+              td.textContent = '[hover me; or click to expand]';
+            }
             td.removeAttribute('title');
             td.dataset.fulltext = text;
             td.classList.add('hover-reveal');

@@ -28,7 +28,6 @@ export default class SheetPicker {
 
     // Range input (A1:BZ99) – hidden until a sheet is loaded
     this.rangeLabel = document.createElement('label');
-    this.rangeLabel.textContent = 'Range:';
     this.rangeLabel.style.marginLeft = '0.5rem';
     this.rangeLabel.style.display = 'none'; // hidden until workbook present
     this.rangeInput = document.createElement('input');
@@ -37,6 +36,15 @@ export default class SheetPicker {
     this.rangeInput.size = 16;
     this.rangeInput.style.fontFamily = 'monospace';
     this.rangeLabel.appendChild(this.rangeInput);
+
+    // i18n hookup
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { this.rangeLabel.firstChild && (this.rangeLabel.firstChild.nodeValue = ''); this.rangeLabel.textContent = t('sheet.range_label'); this.rangeLabel.appendChild(this.rangeInput); };
+        apply();
+        this._i18nUnsub = onChange(apply);
+      });
+    } catch (_) { /* ignore */ }
 
     this._onStoreChange = this._onStoreChange.bind(this);
     this._onChange = this._onChange.bind(this);
@@ -134,18 +142,19 @@ export default class SheetPicker {
     const str = this.rangeInput.value.trim();
     const vr = parseA1Range(str);
     if (!vr) {
-      confirmDialog({
-        title: 'Invalid range',
-        message: 'Use format like A1:BZ99',
-        confirmText: 'OK',
-        cancelText: 'Dismiss'
-      });
+      import('../i18n/index.js').then(({ t }) => confirmDialog({
+        title: t('sheet.invalid_range_title'),
+        message: t('sheet.invalid_range_message'),
+        confirmText: t('dialogs.ok'),
+        cancelText: t('dialogs.dismiss')
+      }));
       return;
     }
     store.set('viewRange', vr);
   }
 
   destroy() {
+    if (this._i18nUnsub) try { this._i18nUnsub(); } catch (_) {}
     this.selectEl.removeEventListener('change', this._onChange);
     this.rangeInput && this.rangeInput.removeEventListener('keydown', this._applyRangeFromInput);
     this.unsubscribe && this.unsubscribe();

@@ -31,13 +31,13 @@ export default class FileInput {
     this.dropzone.className = 'file-dropzone';
     this.dropzone.tabIndex = 0;
     this.dropzone.setAttribute('role', 'button');
-    this.dropzone.setAttribute('aria-label', 'Upload file. Drop here or press Enter to choose file.');
+    // Aria label set by updateLocale
     this.dropzone.classList.add('empty');
 
     // Visible instructional text
     const dzText = document.createElement('div');
     dzText.className = 'file-dropzone-text';
-    dzText.textContent = 'Drop a workbook here or click to choose';
+    this.dzText = dzText;
     this.dropzone.appendChild(dzText);
 
     // Hidden native input retains browser file dialog and accessibility
@@ -69,6 +69,20 @@ export default class FileInput {
     // Compose nodes
     this.container.appendChild(this.dropzone);
     this.parent.appendChild(this.container);
+    // Initial locale text
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        this.updateLocale(t);
+        this._i18nUnsub = onChange(() => this.updateLocale(t));
+      });
+    } catch (_) { /* ignore if i18n not ready */ }
+  }
+
+  updateLocale(t) {
+    try {
+      this.dropzone.setAttribute('aria-label', t('file.drop_aria'));
+      this.dzText.textContent = t('file.drop_text');
+    } catch (_) { /* ignore */ }
   }
 
   _handleChange(event) {
@@ -130,6 +144,7 @@ export default class FileInput {
    * Remove event listeners and DOM nodes.
    */
   destroy() {
+    if (this._i18nUnsub) try { this._i18nUnsub(); } catch (_) {}
     this.input.removeEventListener('change', this._handleChange);
     if (this.dropzone) {
       this.dropzone.removeEventListener('dragover', this._onDragOver);

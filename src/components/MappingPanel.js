@@ -149,8 +149,24 @@ export default class MappingPanel {
     const trash = document.createElement('li');
     trash.className = 'trash-dropzone';
     trash.setAttribute('role', 'button');
-    trash.setAttribute('aria-label', 'Drop a box here to delete it');
-    trash.textContent = '🗑 Trash';
+    try {
+      // Best-effort i18n for trash label
+      // Avoid blocking render if i18n not yet initialised
+      // eslint-disable-next-line promise/catch-or-return
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => {
+          trash.setAttribute('aria-label', t('controls.trash_aria'));
+          trash.textContent = t('controls.trash');
+        };
+        apply();
+        // update if locale changes while panel is mounted
+        if (this._trashI18nUnsub) this._trashI18nUnsub();
+        this._trashI18nUnsub = onChange(apply);
+      });
+    } catch (_) {
+      trash.setAttribute('aria-label', 'Drop a box here to delete it');
+      trash.textContent = '🗑 Trash';
+    }
 
     const isOverlayMoveEvent = (e) => {
       if (!e || !e.dataTransfer) return false;
@@ -200,6 +216,7 @@ export default class MappingPanel {
   }
 
   destroy() {
+    if (this._trashI18nUnsub) try { this._trashI18nUnsub(); } catch (_) {}
     this.unsubscribe && this.unsubscribe();
     if (this.container.parentNode) this.container.parentNode.removeChild(this.container);
   }

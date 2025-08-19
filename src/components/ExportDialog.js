@@ -27,15 +27,35 @@ export default class ExportDialog {
     pre.textContent = JSON.stringify(jsonObj, null, 2);
 
     const download = document.createElement('a');
-    download.textContent = 'Download JSON';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => {
+          download.textContent = t('export.download');
+          download.download = t('export.filename');
+        };
+        apply();
+        this._i18nUnsub = onChange(apply);
+      });
+    } catch (_) {
+      download.textContent = 'Download JSON';
+      download.download = 'export.json';
+    }
     download.style.display = 'inline-block';
     download.style.marginTop = '1em';
-    download.download = 'export.json';
+    // href set below; filename set by i18n above
     const blob = new Blob([JSON.stringify(jsonObj, null, 2)], { type: 'application/json' });
     download.href = URL.createObjectURL(blob);
 
     const close = document.createElement('button');
-    close.textContent = 'Close';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { close.textContent = t('export.close'); };
+        apply();
+        this._i18nUnsub2 = onChange(apply);
+      });
+    } catch (_) {
+      close.textContent = 'Close';
+    }
     close.style.marginLeft = '1em';
     close.addEventListener('click', () => this.destroy());
 
@@ -47,6 +67,8 @@ export default class ExportDialog {
   }
 
   destroy() {
+    if (this._i18nUnsub) try { this._i18nUnsub(); } catch (_) {}
+    if (this._i18nUnsub2) try { this._i18nUnsub2(); } catch (_) {}
     if (this.overlay.parentNode) this.overlay.parentNode.removeChild(this.overlay);
   }
 }

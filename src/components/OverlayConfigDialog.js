@@ -51,18 +51,42 @@ export default class OverlayConfigDialog {
     const propsForTitle = getSchemaProperties(schema) || {};
     const metaForTitle = propsForTitle[this.field] || {};
     const displayName = metaForTitle.description || metaForTitle.title || this.field;
-    title.textContent = `Settings for ${displayName}`;
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { title.textContent = t('overlay.settings_for', { name: displayName }); };
+        apply();
+        this._i18nUnsubTitle = onChange(apply);
+      });
+    } catch (_) {
+      title.textContent = `Settings for ${displayName}`;
+    }
     dialog.appendChild(title);
 
     // Section header: Identity (field + index)
     const identityHeader = document.createElement('h4');
-    identityHeader.textContent = 'Identity';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { identityHeader.textContent = t('overlay.identity'); };
+        apply();
+        this._i18nUnsubIdentity = onChange(apply);
+      });
+    } catch (_) {
+      identityHeader.textContent = 'Identity';
+    }
     identityHeader.style.margin = '0.5em 0 0.25em 0';
     dialog.appendChild(identityHeader);
 
     // Field select
     const fieldLabel = document.createElement('label');
-    fieldLabel.textContent = 'Field:';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { fieldLabel.textContent = t('overlay.field'); fieldLabel.appendChild(fieldSelect); };
+        apply();
+        this._i18nUnsubField = onChange(apply);
+      });
+    } catch (_) {
+      fieldLabel.textContent = 'Field:';
+    }
     fieldLabel.style.display = 'block';
     const fieldSelect = document.createElement('select');
     fieldSelect.style.width = '100%';
@@ -71,7 +95,15 @@ export default class OverlayConfigDialog {
 
     // Index select (1-based for UX, 0-based in data)
     const indexLabel = document.createElement('label');
-    indexLabel.textContent = 'Index (1-based):';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { indexLabel.textContent = t('overlay.index_1based'); indexLabel.appendChild(indexSelect); };
+        apply();
+        this._i18nUnsubIndex = onChange(apply);
+      });
+    } catch (_) {
+      indexLabel.textContent = 'Index (1-based):';
+    }
     indexLabel.style.display = 'block';
     const indexSelect = document.createElement('select');
     indexSelect.style.width = '100%';
@@ -135,17 +167,37 @@ export default class OverlayConfigDialog {
 
     // Section header: Movement
     const movementHeader = document.createElement('h4');
-    movementHeader.textContent = 'Movement';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { movementHeader.textContent = t('overlay.movement'); };
+        apply();
+        this._i18nUnsubMovement = onChange(apply);
+      });
+    } catch (_) {
+      movementHeader.textContent = 'Movement';
+    }
     movementHeader.style.margin = '0.5em 0 0.25em 0';
     dialog.appendChild(movementHeader);
 
     const modeWrapper = document.createElement('div');
     modeWrapper.style.marginBottom = '0.75em';
 
-    const stepRadio = this._makeRadio('mode', 'step', 'Exact offset');
-    const jumpRadio = this._makeRadio('mode', 'jump', 'Jump to next value');
-    const scriptRadio = this._makeRadio('mode', 'script', 'Custom JavaScript');
-    const followRadio = this._makeRadio('mode', 'follow', 'Follow another field');
+    const stepRadio = this._makeRadio('mode', 'step');
+    const jumpRadio = this._makeRadio('mode', 'jump');
+    const scriptRadio = this._makeRadio('mode', 'script');
+    const followRadio = this._makeRadio('mode', 'follow');
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => {
+          stepRadio.label.textContent = t('overlay.mode_exact');
+          jumpRadio.label.textContent = t('overlay.mode_jump');
+          scriptRadio.label.textContent = t('overlay.mode_script');
+          followRadio.label.textContent = t('overlay.mode_follow');
+        };
+        apply();
+        this._i18nUnsubModes = onChange(apply);
+      });
+    } catch (_) { /* ignore */ }
 
     // Order: Jump to next value (top), Exact offset, Follow, Custom JavaScript
     modeWrapper.appendChild(jumpRadio.wrapper);
@@ -156,7 +208,15 @@ export default class OverlayConfigDialog {
 
     // Row & Column offset inputs
     const rowLabel = document.createElement('label');
-    rowLabel.textContent = 'Row Δ:';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { rowLabel.textContent = t('overlay.row_delta'); rowLabel.appendChild(rowInput); };
+        apply();
+        this._i18nUnsubRow = onChange(apply);
+      });
+    } catch (_) {
+      rowLabel.textContent = 'Row Δ:';
+    }
     rowLabel.style.display = 'block';
 
     const rowInput = document.createElement('input');
@@ -167,7 +227,15 @@ export default class OverlayConfigDialog {
     rowLabel.appendChild(rowInput);
 
     const colLabel = document.createElement('label');
-    colLabel.textContent = 'Col Δ:';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { colLabel.textContent = t('overlay.col_delta'); colLabel.appendChild(colInput); };
+        apply();
+        this._i18nUnsubCol = onChange(apply);
+      });
+    } catch (_) {
+      colLabel.textContent = 'Col Δ:';
+    }
     colLabel.style.display = 'block';
 
     const colInput = document.createElement('input');
@@ -179,7 +247,15 @@ export default class OverlayConfigDialog {
 
     // Follow controls
     const followFieldLabel = document.createElement('label');
-    followFieldLabel.textContent = 'Follow field:';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { followFieldLabel.textContent = t('overlay.follow_field'); followFieldLabel.appendChild(followFieldSelect); };
+        apply();
+        this._i18nUnsubFollowField = onChange(apply);
+      });
+    } catch (_) {
+      followFieldLabel.textContent = 'Follow field:';
+    }
     followFieldLabel.style.display = 'none';
     const followFieldSelect = document.createElement('select');
     followFieldSelect.style.width = '100%';
@@ -187,7 +263,15 @@ export default class OverlayConfigDialog {
     followFieldLabel.appendChild(followFieldSelect);
 
     const followIndexLabel = document.createElement('label');
-    followIndexLabel.textContent = 'Follow index (1-based):';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { followIndexLabel.textContent = t('overlay.follow_index_1based'); followIndexLabel.appendChild(followIndexSelect); };
+        apply();
+        this._i18nUnsubFollowIndex = onChange(apply);
+      });
+    } catch (_) {
+      followIndexLabel.textContent = 'Follow index (1-based):';
+    }
     followIndexLabel.style.display = 'none';
     const followIndexSelect = document.createElement('select');
     followIndexSelect.style.width = '100%';
@@ -330,7 +414,15 @@ export default class OverlayConfigDialog {
     // Remove button (left)
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
-    removeBtn.textContent = 'Remove';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { removeBtn.textContent = t('overlay.remove'); };
+        apply();
+        this._i18nUnsubRemove = onChange(apply);
+      });
+    } catch (_) {
+      removeBtn.textContent = 'Remove';
+    }
     removeBtn.style.color = 'white';
     removeBtn.style.background = '#d9534f';
     removeBtn.style.border = 'none';
@@ -340,7 +432,15 @@ export default class OverlayConfigDialog {
 
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
-    saveBtn.textContent = 'Save';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { saveBtn.textContent = t('overlay.save'); };
+        apply();
+        this._i18nUnsubSave = onChange(apply);
+      });
+    } catch (_) {
+      saveBtn.textContent = 'Save';
+    }
     // Green save button – higher contrast
     saveBtn.style.color = '#fff';
     saveBtn.style.background = '#2e7d32'; // darker green
@@ -366,7 +466,15 @@ export default class OverlayConfigDialog {
 
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
-    cancelBtn.textContent = 'Cancel';
+    try {
+      import('../i18n/index.js').then(({ t, onChange }) => {
+        const apply = () => { cancelBtn.textContent = t('overlay.cancel'); };
+        apply();
+        this._i18nUnsubCancel = onChange(apply);
+      });
+    } catch (_) {
+      cancelBtn.textContent = 'Cancel';
+    }
     cancelBtn.style.marginLeft = '0.5em';
     // Yellow cancel button
     cancelBtn.style.color = '#000';

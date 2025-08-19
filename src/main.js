@@ -1,6 +1,7 @@
 /* Entry point for Sheet-to-JSON Mapper demo harness. */
 
 import { store } from './store.js';
+import { i18n, t, setLocale, getLocale, onChange as onI18nChange } from './i18n/index.js';
 import FileInput from './components/FileInput.js';
 import SheetPicker from './components/SheetPicker.js';
 import SchemaInput from './components/SchemaInput.js';
@@ -14,14 +15,20 @@ import ExportDialog from './components/ExportDialog.js';
 import confirmDialog from './components/ConfirmDialog.js';
 import '../styles/styles.css';
 
+await i18n.init();
 console.log('Sheet-to-JSON Mapper loaded');
 
 const appEl = document.getElementById('app');
 
 // Heading for smoke test
 const heading = document.createElement('h1');
-heading.textContent = 'Sheet-to-JSON Mapper';
 appEl.appendChild(heading);
+function applyStaticTexts() {
+  try { document.title = t('app.title'); } catch (_) {}
+  heading.textContent = t('app.title');
+}
+applyStaticTexts();
+onI18nChange(applyStaticTexts);
 
 // Instantiate components
 new FileInput({
@@ -62,10 +69,10 @@ async function loadSchemaFromQuery() {
     // eslint-disable-next-line no-console
     console.error(err);
     await confirmDialog({
-      title: 'Failed to load schema',
-      message: err.message || 'Failed to load schema from URL',
-      confirmText: 'OK',
-      cancelText: 'Dismiss'
+      title: t('errors.load_schema_title'),
+      message: err.message || t('errors.load_schema_message'),
+      confirmText: t('dialogs.ok'),
+      cancelText: t('dialogs.dismiss')
     });
   }
 }
@@ -255,7 +262,7 @@ function makeButton(label, onClick) {
 
 // Export JSON
 controlsTop.appendChild(
-  makeButton('Inspect JSON', async () => {
+  makeButton(t('controls.inspect_json'), async () => {
     try {
       // Validate required fields across the effective item schema.
       const state = store.getState();
@@ -280,12 +287,12 @@ controlsTop.appendChild(
       if (missingSet.size > 0) {
         const items = Array.from(missingSet).map(toDisplay);
         const proceed = await confirmDialog({
-          title: 'Missing required fields',
-          message: 'The following required fields are unmapped:',
+          title: t('dialogs.missing_required_title'),
+          message: t('dialogs.missing_required_message_all'),
           items,
-          note: 'Continue anyway?',
-          confirmText: 'Continue',
-          cancelText: 'Cancel'
+          note: t('dialogs.missing_required_note'),
+          confirmText: t('dialogs.continue'),
+          cancelText: t('dialogs.cancel')
         });
         if (!proceed) return;
       }
@@ -294,26 +301,26 @@ controlsTop.appendChild(
       new ExportDialog(json);
     } catch (err) {
       await confirmDialog({
-        title: 'Inspect JSON failed',
-        message: err.message || 'Failed to inspect JSON',
-        confirmText: 'OK',
-        cancelText: 'Dismiss'
+        title: t('errors.inspect_title'),
+        message: err.message || t('errors.inspect_message'),
+        confirmText: t('dialogs.ok'),
+        cancelText: t('dialogs.dismiss')
       });
     }
   })
 );
 
 // "Confirm & Next" button – snapshot current mapping & shift down one row
-const confirmNextBtn = makeButton('Confirm & Next', async () => {
+const confirmNextBtn = makeButton(t('controls.confirm_next'), async () => {
   try {
     const state = store.getState();
     const mapping = state.mapping;
     if (!mapping || Object.keys(mapping).length === 0) {
       await confirmDialog({
-        title: 'Nothing to confirm',
-        message: 'Map at least one cell before continuing.',
-        confirmText: 'OK',
-        cancelText: 'Dismiss'
+        title: t('dialogs.nothing_to_confirm_title'),
+        message: t('dialogs.nothing_to_confirm_message'),
+        confirmText: t('dialogs.ok'),
+        cancelText: t('dialogs.dismiss')
       });
       return;
     }
@@ -326,12 +333,12 @@ const confirmNextBtn = makeButton('Confirm & Next', async () => {
     };
     if (missing.length > 0) {
       const proceed = await confirmDialog({
-        title: 'Missing required fields',
-        message: 'The following required fields are unmapped for this record:',
+        title: t('dialogs.missing_required_title'),
+        message: t('dialogs.missing_required_message_record'),
         items: missing.map(toDisplay),
-        note: 'Continue anyway?',
-        confirmText: 'Continue',
-        cancelText: 'Cancel'
+        note: t('dialogs.missing_required_note'),
+        confirmText: t('dialogs.continue'),
+        cancelText: t('dialogs.cancel')
       });
       if (!proceed) return;
     }
@@ -340,10 +347,10 @@ const confirmNextBtn = makeButton('Confirm & Next', async () => {
     __notifyConfirm();
   } catch (err) {
     await confirmDialog({
-      title: 'Confirm failed',
-      message: err.message || 'Confirm failed',
-      confirmText: 'OK',
-      cancelText: 'Dismiss'
+      title: t('errors.confirm_title'),
+      message: err.message || t('errors.confirm_message'),
+      confirmText: t('dialogs.ok'),
+      cancelText: t('dialogs.dismiss')
     });
   }
 });
@@ -352,7 +359,7 @@ controlsTop.appendChild(confirmNextBtn);
 
 // Undo button – remove the last confirmed snapshot and restore overlays
 controlsTop.appendChild(
-  makeButton('Undo', async () => {
+  makeButton(t('controls.undo'), async () => {
     try {
       const { records } = store.getState();
       if (!Array.isArray(records) || records.length === 0) {
@@ -371,10 +378,10 @@ controlsTop.appendChild(
   __notifyUndo();
   } catch (err) {
       await confirmDialog({
-        title: 'Undo failed',
-        message: err.message || 'Undo failed',
-        confirmText: 'OK',
-        cancelText: 'Dismiss'
+        title: t('errors.undo_title'),
+        message: err.message || t('errors.undo_message'),
+        confirmText: t('dialogs.ok'),
+        cancelText: t('dialogs.dismiss')
       });
     }
   })
@@ -394,15 +401,23 @@ shadowToggle.addEventListener('change', () => {
     store.set('showMergeShadowText', shadowToggle.checked);
   } catch (err) {
     confirmDialog({
-      title: 'Update failed',
-      message: err.message || 'Failed to update setting',
-      confirmText: 'OK',
-      cancelText: 'Dismiss'
+      title: t('errors.update_failed_title'),
+      message: err.message || t('errors.update_failed_message'),
+      confirmText: t('dialogs.ok'),
+      cancelText: t('dialogs.dismiss')
     });
   }
 });
 shadowToggleLabel.appendChild(shadowToggle);
-shadowToggleLabel.appendChild(document.createTextNode('Show gray merged text'));
+function updateShadowLabel() {
+  // Rebuild label content: set text then reinsert the checkbox as first child
+  const text = t('controls.show_merged_shadow');
+  shadowToggleLabel.textContent = text;
+  // Ensure the checkbox remains the first child
+  shadowToggleLabel.insertBefore(shadowToggle, shadowToggleLabel.firstChild);
+}
+updateShadowLabel();
+onI18nChange(updateShadowLabel);
 controlsTop.appendChild(shadowToggleLabel);
 
 
