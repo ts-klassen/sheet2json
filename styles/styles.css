@@ -10,6 +10,53 @@ body {
   padding: 1rem;
 }
 
+/* File input dropzone */
+.file-dropzone {
+  border: 2px dashed #9aa0a6;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  color: #5f6368;
+  background: #fafafa;
+  cursor: pointer;
+  user-select: none;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+/* Space below the file uploader to separate it from sheet controls */
+.file-input-container { margin-bottom: 1rem; }
+
+.file-dropzone.active {
+  border-color: #3b82f6;
+  background: #eef5ff;
+  color: #1d4ed8;
+}
+
+.file-dropzone .file-dropzone-text {
+  font-size: 0.95rem;
+}
+
+/* Keep native input in DOM for accessibility while hiding visually */
+.file-dropzone .file-input-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* When no file is selected, make the dropzone tall and center content */
+.file-dropzone.empty {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Sticky control bar that hosts the primary action buttons such as
    "Export JSON" and "Confirm & Next".  The element receives the `.controls-bar`
    class from `src/main.js`.  Using `position: sticky` keeps it at the top of
