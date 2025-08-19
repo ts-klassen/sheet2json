@@ -9,7 +9,7 @@ import { loadWorkbookFile } from './utils/workbookLoader.js';
 import './autoDetector.js';
 import SheetRenderer from './components/SheetRenderer.js';
 import OverlayManager from './components/OverlayManager.js';
-import { advanceCurrentField, shiftMappingDown } from './utils/mappingUtils.js';
+import { shiftMappingDown } from './utils/mappingUtils.js';
 import ExportDialog from './components/ExportDialog.js';
 import '../styles/styles.css';
 
@@ -191,50 +191,25 @@ controlsTop.appendChild(
   })
 );
 
-// "Confirm & Next" button – finalise current field mapping & advance focus
+// "Confirm & Next" button – snapshot current mapping & shift down one row
 const confirmNextBtn = makeButton('Confirm & Next', () => {
-    try {
-      const { confirmNextMode } = store.getState();
-
-      if (confirmNextMode === 'advanceField') {
-        const success = advanceCurrentField();
-        if (!success) {
-          // eslint-disable-next-line no-alert
-          alert('Please map at least one cell for the current field before continuing.');
-        } else {
-          // Public interface notification: a successful confirm occurred.
-          __notifyConfirm();
-        }
-      } else {
-        // Default & "shiftRow" path – always snapshot & shift mapping down.
-        const mapping = store.getState().mapping;
-        if (!mapping || Object.keys(mapping).length === 0) {
-          // eslint-disable-next-line no-alert
-          alert('Nothing to confirm – map at least one cell before continuing.');
-          return;
-        }
-        shiftMappingDown();
-        // Public interface notification: a successful confirm occurred.
-        __notifyConfirm();
-      }
-    } catch (err) {
+  try {
+    const mapping = store.getState().mapping;
+    if (!mapping || Object.keys(mapping).length === 0) {
       // eslint-disable-next-line no-alert
-      alert(err.message);
+      alert('Nothing to confirm – map at least one cell before continuing.');
+      return;
     }
-  });
+    shiftMappingDown();
+    // Public interface notification: a successful confirm occurred.
+    __notifyConfirm();
+  } catch (err) {
+    // eslint-disable-next-line no-alert
+    alert(err.message);
+  }
+});
 
 controlsTop.appendChild(confirmNextBtn);
-
-// Secondary interaction – double-click opens the configuration dialog so
-// users can switch between "shiftRow" and "advanceField" modes without diving
-// into developer tools.  This behaviour is documented inside
-// ConfirmNextConfigDialog but was not previously wired to the button.
-confirmNextBtn.addEventListener('dblclick', () => {
-  // Lazy-load to avoid upfront cost when users never open the dialog.
-  import('./components/ConfirmNextConfigDialog.js').then(({ default: Dialog }) => {
-    new Dialog();
-  });
-});
 
 appEl.appendChild(controls);
 

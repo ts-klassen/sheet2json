@@ -9,7 +9,6 @@ const initialState = {
   currentFieldIndex: 0,
   errors: [], // Array of error objects / strings
   records: [] // Array of mapping snapshots (for multi-record sheets)
-  ,confirmNextMode: 'shiftRow' // 'shiftRow' | 'advanceField' – behaviour of Confirm & Next button
   ,showMergeShadowText: false // Whether to show text in shadow cells of merged ranges
   ,viewRange: null // { start: {row,col}, end: {row,col} } – visible grid range
 };
