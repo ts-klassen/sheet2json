@@ -122,10 +122,15 @@ export default class OverlayManager {
           userSelect: 'none'
         });
 
-        const desc = props && props[field] && typeof props[field].description === 'string'
-          ? props[field].description
-          : null;
-        overlay.textContent = desc || field;
+        const meta = (props && props[field]) || {};
+        const desc = typeof meta.description === 'string' ? meta.description : null;
+        const baseLabel = desc || field;
+        if (meta && meta.type === 'array') {
+          // Show 1-based index for array fields to disambiguate overlays
+          overlay.textContent = `${baseLabel} #${index + 1}`;
+        } else {
+          overlay.textContent = baseLabel;
+        }
 
         // Double-click opens per-overlay configuration dialog
         overlay.addEventListener('dblclick', () => {
