@@ -12,9 +12,9 @@
  */
 // Modern, balanced palette (Tailwind-inspired, -600 tones)
 // Order maximizes separation between adjacent indices
-// 6 binary RGB colours excluding black (#000) and white (#fff)
-// Order mirrors user's example: 00f, 0f0, 0ff, f00, f0f, ff0
-const PALETTE = ['#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00'];
+// 6 binary RGB colours excluding black (#000) and white (#fff) + orange
+// Order mirrors user's example: 00f, 0f0, 0ff, f00, f0f, ff0, orange
+const PALETTE = ['#0000ff', '#00ff00', '#00ffff', '#ff0000', '#ff00ff', '#ffff00', '#ffa500'];
 
 // Optional ordered mapping: set by MappingPanel to guarantee unique colours
 // for the first N fields (N = PALETTE.length). Falls back to hashing when
