@@ -516,12 +516,14 @@ export default class OverlayConfigDialog {
     input.value = value;
 
     const span = document.createElement('span');
+    // Allow optional default label text; i18n may update this later
     span.textContent = labelText;
     span.style.marginLeft = '0.25em';
 
     wrapper.appendChild(input);
     wrapper.appendChild(span);
-    return { wrapper, input };
+    // Expose the span as `label` so callers can set i18n text
+    return { wrapper, input, label: span };
   }
 
   _save(destFieldRaw, destIndexRaw, isStepMode, isJumpMode, isFollowMode, followField, followIndex, rowVal, colVal, scriptValue) {
