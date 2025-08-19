@@ -77,16 +77,25 @@ loadSchemaFromQuery();
 // behavior.
 //
 // API surface (attached to window.Sheet2JSON):
-//   - VERSION: string — semantic API version (e.g. '1.0.0').
+//   - VERSION: string — semantic API version (e.g. '1.1.0').
 //   - getJson(): object — returns current exported JSON, or throws if not ready.
 //   - onConfirm(callback): function — subscribes to updates after each confirm
 //       action. Returns an unsubscribe function. Subscriber errors are ignored.
+//   - onUndo(callback): function — subscribes to updates after an undo. Returns
+//       an unsubscribe function. Callback receives latest JSON or null.
+//   - onChange(callback): function — subscribes to updates after any change
+//       (confirm or undo). Returns an unsubscribe function. Callback receives
+//       latest JSON or null.
 //
 // Additionally, two document-level CustomEvents are dispatched:
 //   - 'sheet2json:ready'   — fired once when the API becomes available.
 //       detail: { version: string }
 //   - 'sheet2json:confirm' — fired after each successful confirm.
 //       detail: <json object>
+//   - 'sheet2json:undo'    — fired after an undo.
+//       detail: <json object | null>
+//   - 'sheet2json:change'  — fired after confirm and undo.
+//       detail: <json object | null>
 //
 // IMPORTANT:
 //   - This interface is intentionally neutral (no app-specific details).
@@ -95,8 +104,10 @@ loadSchemaFromQuery();
 
 import { buildJson } from './utils/exporter.js';
 
-const __PUBLIC_API_VERSION = '1.0.0';
+const __PUBLIC_API_VERSION = '1.1.0';
 const __confirmSubscribers = new Set();
+const __undoSubscribers = new Set();
+const __changeSubscribers = new Set();
 
 function __dispatchReady(version) {
   try {
@@ -114,6 +125,22 @@ function __dispatchConfirm(json) {
   } catch (_) { /* ignore */ }
 }
 
+function __dispatchUndo(json) {
+  try {
+    document.dispatchEvent(
+      new CustomEvent('sheet2json:undo', { detail: json })
+    );
+  } catch (_) { /* ignore */ }
+}
+
+function __dispatchChange(json) {
+  try {
+    document.dispatchEvent(
+      new CustomEvent('sheet2json:change', { detail: json })
+    );
+  } catch (_) { /* ignore */ }
+}
+
 function __notifyConfirm() {
   let json;
   try {
@@ -127,6 +154,28 @@ function __notifyConfirm() {
     });
     __dispatchConfirm(json);
   }
+  // Always treat confirm as a change; allow consumers to handle null
+  __changeSubscribers.forEach((cb) => {
+    try { cb(json); } catch (_) { /* ignore subscriber errors */ }
+  });
+  __dispatchChange(json);
+}
+
+function __notifyUndo() {
+  let json;
+  try {
+    json = buildJson();
+  } catch (_) {
+    json = null; // when no confirmed records remain
+  }
+  __undoSubscribers.forEach((cb) => {
+    try { cb(json); } catch (_) { /* ignore subscriber errors */ }
+  });
+  __dispatchUndo(json);
+  __changeSubscribers.forEach((cb) => {
+    try { cb(json); } catch (_) { /* ignore subscriber errors */ }
+  });
+  __dispatchChange(json);
 }
 
 function __ensurePublicApi() {
@@ -144,6 +193,20 @@ function __ensurePublicApi() {
       }
       __confirmSubscribers.add(cb);
       return () => __confirmSubscribers.delete(cb);
+    },
+    onUndo: (cb) => {
+      if (typeof cb !== 'function') {
+        throw new TypeError('onUndo(callback) requires a function');
+      }
+      __undoSubscribers.add(cb);
+      return () => __undoSubscribers.delete(cb);
+    },
+    onChange: (cb) => {
+      if (typeof cb !== 'function') {
+        throw new TypeError('onChange(callback) requires a function');
+      }
+      __changeSubscribers.add(cb);
+      return () => __changeSubscribers.delete(cb);
     }
   });
   Object.defineProperty(window, 'Sheet2JSON', {
@@ -210,6 +273,32 @@ const confirmNextBtn = makeButton('Confirm & Next', () => {
 });
 
 controlsTop.appendChild(confirmNextBtn);
+
+// Undo button – remove the last confirmed snapshot and restore overlays
+controlsTop.appendChild(
+  makeButton('Undo', () => {
+    try {
+      const { records } = store.getState();
+      if (!Array.isArray(records) || records.length === 0) {
+        // Nothing to undo; fail silently for smoother UX
+        return;
+      }
+      const prevSnapshot = records[records.length - 1];
+      const trimmed = records.slice(0, -1);
+      // First remove the last record so exports reflect the undo
+      store.set('records', trimmed);
+      // Then restore mapping to the popped snapshot so overlays move back
+      if (prevSnapshot && typeof prevSnapshot === 'object') {
+        store.set('mapping', prevSnapshot);
+      }
+      // Notify integrations about undo and generic change
+      __notifyUndo();
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(err.message);
+    }
+  })
+);
 
 appEl.appendChild(controls);
 

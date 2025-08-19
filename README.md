@@ -184,13 +184,17 @@ For more details refer to `workbench/specs/draggable-field-mapping/requirements.
 This tool exposes a small, neutral, and versioned public interface that hosts MUST use. Internal DOM, labels, and private helpers may change at any time; the API below must remain stable. Additive changes may be introduced over time; breaking changes require a major version bump.
 
 Surface (window.Sheet2JSON)
-- VERSION: semantic API version string (e.g., '1.0.0').
+- VERSION: semantic API version string (e.g., '1.1.0').
 - getJson(): synchronously returns the current exported JSON; throws if workbook/schema/mapping is not ready.
 - onConfirm(callback): subscribe to updates after each successful confirm; returns an unsubscribe function. Subscriber exceptions are ignored.
+- onUndo(callback): subscribe to updates after an Undo; returns an unsubscribe function. Callback receives exported JSON or `null` when no confirmed records remain.
+- onChange(callback): subscribe to updates after any change (Confirm or Undo); returns an unsubscribe function. Callback receives exported JSON or `null`.
 
 Events (document)
 - 'sheet2json:ready': fired once when the API becomes available; detail: { version }.
 - 'sheet2json:confirm': fired after each successful confirm; detail: the latest JSON object.
+- 'sheet2json:undo': fired after an Undo; detail: the latest JSON object or `null` when none.
+- 'sheet2json:change': fired after both Confirm and Undo; detail: the latest JSON object or `null`.
 
 Semantics
 - Successful confirm means one of:
@@ -210,6 +214,12 @@ const t = setInterval(() => {
     clearInterval(t);
     const off = w.Sheet2JSON.onConfirm((json) => {
       console.log('Confirmed JSON:', json);
+    });
+    const offUndo = w.Sheet2JSON.onUndo((json) => {
+      console.log('Undo JSON (may be null):', json);
+    });
+    const offChange = w.Sheet2JSON.onChange((json) => {
+      console.log('Any change (confirm/undo):', json);
     });
     // Optional on-demand fetch:
     // const current = w.Sheet2JSON.getJson();
