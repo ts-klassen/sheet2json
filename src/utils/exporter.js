@@ -24,6 +24,7 @@ function mappingToObject(mapping, workbook, schema) {
   // Iterate across all schema properties to ensure array fields appear as
   // empty arrays even when no mapping exists.
   const props = getSchemaProperties(schema) || {};
+  const requiredList = Array.isArray(schema?.required) ? schema.required : [];
   Object.keys(props).forEach((field) => {
     const prop = props[field] || {};
     const isArray = prop.type === 'array';
@@ -39,10 +40,12 @@ function mappingToObject(mapping, workbook, schema) {
     });
 
     if (isArray) {
-      // Always include arrays; empty array when nothing mapped
-      result[field] = transformed;
+      // Include arrays only when mapped or required; otherwise omit.
+      if (transformed.length > 0 || requiredList.includes(field)) {
+        result[field] = transformed;
+      }
     } else {
-      // For scalars, omit the field entirely when unmapped
+      // For scalars, omit the field entirely when unmapped.
       if (transformed.length > 0) {
         result[field] = transformed[0];
       }
@@ -50,6 +53,41 @@ function mappingToObject(mapping, workbook, schema) {
   });
 
   return result;
+}
+
+// Determine the schema that defines the properties we map (handles wrappers).
+function _effectiveItemSchema(schema) {
+  if (!schema || typeof schema !== 'object') return {};
+  const cellsDef = schema.properties?.cells;
+  if (cellsDef && cellsDef.type === 'array') {
+    return cellsDef.items || cellsDef;
+  }
+  if (schema.type === 'array' && schema.items) {
+    return schema.items;
+  }
+  return schema;
+}
+
+/**
+ * Compute a flat list of required fields that are currently unmapped
+ * in the provided mapping object, according to the effective item schema.
+ */
+export function findMissingRequiredFields(schema, mapping) {
+  const eff = _effectiveItemSchema(schema);
+  const props = getSchemaProperties(eff) || {};
+  const requiredList = Array.isArray(eff?.required) ? eff.required : [];
+  const missing = [];
+
+  requiredList.forEach((field) => {
+    if (!Object.prototype.hasOwnProperty.call(props, field)) return;
+    const prop = props[field] || {};
+    const list = Array.isArray(mapping?.[field]) ? mapping[field] : [];
+    if (!list.length) {
+      missing.push(field);
+    }
+  });
+
+  return missing;
 }
 
 /**

@@ -1,4 +1,5 @@
 import { store } from '../store.js';
+import confirmDialog from './ConfirmDialog.js';
 import { parseA1Range, formatA1Range } from '../utils/a1.js';
 
 /**
@@ -133,7 +134,12 @@ export default class SheetPicker {
     const str = this.rangeInput.value.trim();
     const vr = parseA1Range(str);
     if (!vr) {
-      alert('Invalid range. Use format like A1:BZ99');
+      confirmDialog({
+        title: 'Invalid range',
+        message: 'Use format like A1:BZ99',
+        confirmText: 'OK',
+        cancelText: 'Dismiss'
+      });
       return;
     }
     store.set('viewRange', vr);

@@ -11,6 +11,7 @@ import SheetRenderer from './components/SheetRenderer.js';
 import OverlayManager from './components/OverlayManager.js';
 import { shiftMappingDown } from './utils/mappingUtils.js';
 import ExportDialog from './components/ExportDialog.js';
+import confirmDialog from './components/ConfirmDialog.js';
 import '../styles/styles.css';
 
 console.log('Sheet-to-JSON Mapper loaded');
@@ -60,8 +61,12 @@ async function loadSchemaFromQuery() {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);
-    // eslint-disable-next-line no-alert
-    alert(err.message || 'Failed to load schema from URL');
+    await confirmDialog({
+      title: 'Failed to load schema',
+      message: err.message || 'Failed to load schema from URL',
+      confirmText: 'OK',
+      cancelText: 'Dismiss'
+    });
   }
 }
 
@@ -102,7 +107,7 @@ loadSchemaFromQuery();
 //   - Do NOT remove or rename these members/events. Additive changes only.
 // ===========================================================================
 
-import { buildJson } from './utils/exporter.js';
+import { buildJson, findMissingRequiredFields } from './utils/exporter.js';
 
 const __PUBLIC_API_VERSION = '1.1.0';
 const __confirmSubscribers = new Set();
@@ -240,35 +245,95 @@ function makeButton(label, onClick) {
   return btn;
 }
 
+// Inline error helpers removed (using modal confirms instead)
+
 // Template save/load feature removed
+
+// Listen for inline error requests from components
+// document-level inline-error listener removed
 
 // Export JSON
 controlsTop.appendChild(
-  makeButton('Export JSON', () => {
+  makeButton('Inspect JSON', async () => {
     try {
+      // Validate required fields across the effective item schema.
+      const state = store.getState();
+      const snapshots = Array.isArray(state.records) ? state.records : [];
+      const schema = state.schema;
+      // Aggregate missing fields across all snapshots (union)
+      const missingSet = new Set();
+      if (snapshots.length > 0) {
+        snapshots.forEach((snap) => {
+          findMissingRequiredFields(schema, snap).forEach((f) => missingSet.add(f));
+        });
+      } else {
+        // No confirmed records yet — check the current working mapping if any
+        findMissingRequiredFields(schema, state.mapping).forEach((f) => missingSet.add(f));
+      }
+
+      if (missingSet.size > 0) {
+        const items = Array.from(missingSet);
+        const proceed = await confirmDialog({
+          title: 'Missing required fields',
+          message: 'The following required fields are unmapped:',
+          items,
+          note: 'Continue anyway?',
+          confirmText: 'Continue',
+          cancelText: 'Cancel'
+        });
+        if (!proceed) return;
+      }
+
       const json = buildJson();
       new ExportDialog(json);
     } catch (err) {
-      alert(err.message);
+      await confirmDialog({
+        title: 'Inspect JSON failed',
+        message: err.message || 'Failed to inspect JSON',
+        confirmText: 'OK',
+        cancelText: 'Dismiss'
+      });
     }
   })
 );
 
 // "Confirm & Next" button – snapshot current mapping & shift down one row
-const confirmNextBtn = makeButton('Confirm & Next', () => {
+const confirmNextBtn = makeButton('Confirm & Next', async () => {
   try {
-    const mapping = store.getState().mapping;
+    const state = store.getState();
+    const mapping = state.mapping;
     if (!mapping || Object.keys(mapping).length === 0) {
-      // eslint-disable-next-line no-alert
-      alert('Nothing to confirm – map at least one cell before continuing.');
+      await confirmDialog({
+        title: 'Nothing to confirm',
+        message: 'Map at least one cell before continuing.',
+        confirmText: 'OK',
+        cancelText: 'Dismiss'
+      });
       return;
+    }
+    // Warn on missing required fields for this record; allow force-continue
+    const missing = findMissingRequiredFields(state.schema, mapping);
+    if (missing.length > 0) {
+      const proceed = await confirmDialog({
+        title: 'Missing required fields',
+        message: 'The following required fields are unmapped for this record:',
+        items: missing,
+        note: 'Continue anyway?',
+        confirmText: 'Continue',
+        cancelText: 'Cancel'
+      });
+      if (!proceed) return;
     }
     shiftMappingDown();
     // Public interface notification: a successful confirm occurred.
     __notifyConfirm();
   } catch (err) {
-    // eslint-disable-next-line no-alert
-    alert(err.message);
+    await confirmDialog({
+      title: 'Confirm failed',
+      message: err.message || 'Confirm failed',
+      confirmText: 'OK',
+      cancelText: 'Dismiss'
+    });
   }
 });
 
@@ -276,7 +341,7 @@ controlsTop.appendChild(confirmNextBtn);
 
 // Undo button – remove the last confirmed snapshot and restore overlays
 controlsTop.appendChild(
-  makeButton('Undo', () => {
+  makeButton('Undo', async () => {
     try {
       const { records } = store.getState();
       if (!Array.isArray(records) || records.length === 0) {
@@ -292,10 +357,14 @@ controlsTop.appendChild(
         store.set('mapping', prevSnapshot);
       }
       // Notify integrations about undo and generic change
-      __notifyUndo();
-    } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert(err.message);
+  __notifyUndo();
+  } catch (err) {
+      await confirmDialog({
+        title: 'Undo failed',
+        message: err.message || 'Undo failed',
+        confirmText: 'OK',
+        cancelText: 'Dismiss'
+      });
     }
   })
 );
@@ -313,7 +382,12 @@ shadowToggle.addEventListener('change', () => {
   try {
     store.set('showMergeShadowText', shadowToggle.checked);
   } catch (err) {
-    alert(err.message);
+    confirmDialog({
+      title: 'Update failed',
+      message: err.message || 'Failed to update setting',
+      confirmText: 'OK',
+      cancelText: 'Dismiss'
+    });
   }
 });
 shadowToggleLabel.appendChild(shadowToggle);
