@@ -51,6 +51,19 @@ export default class MappingPanel {
     // Ensure a stable, sequential colour assignment to avoid near-duplicates
     registerFieldOrder(fields);
 
+    // Determine required fields using the effective item schema
+    const eff = (() => {
+      const cellsDef = schema?.properties?.cells;
+      if (cellsDef && cellsDef.type === 'array') {
+        return cellsDef.items || cellsDef;
+      }
+      if (schema?.type === 'array' && schema.items) {
+        return schema.items;
+      }
+      return schema || {};
+    })();
+    const requiredList = Array.isArray(eff?.required) ? eff.required : [];
+
     fields.forEach((field, idx) => {
       const li = document.createElement('li');
       li.dataset.field = field;
@@ -111,22 +124,25 @@ export default class MappingPanel {
       }
 
       // Styling rules:
-      // - Array fields: always green, regardless of mapping presence
-      // - Scalar fields: red + bold if not mapped; normal black once mapped
+      // - Array fields: always green (can always add more)
+      // - Optional non-array: green if not placed; black when placed
+      // - Required non-array: red if not placed; black when placed
       const meta = props?.[field] || {};
       const isArrayProp = meta.type === 'array';
+      const isMapped = !!(mapping && mapping[field] && mapping[field].length > 0);
+      const isRequired = requiredList.includes(field);
       if (isArrayProp) {
+        // Arrays: always green and bold (can always add)
         text.style.color = 'green';
         text.style.fontWeight = 'bold';
+      } else if (isRequired) {
+        // Required non-array: red + bold if not placed; black when placed
+        text.style.color = isMapped ? '' : 'red';
+        text.style.fontWeight = isMapped ? 'normal' : 'bold';
       } else {
-        const isMapped = mapping && mapping[field] && mapping[field].length > 0;
-        if (!isMapped) {
-          text.style.fontWeight = 'bold';
-          text.style.color = 'red';
-        } else {
-          text.style.fontWeight = 'normal';
-          text.style.color = '';
-        }
+        // Optional non-array: green + bold if not placed; black when placed
+        text.style.color = isMapped ? '' : 'green';
+        text.style.fontWeight = isMapped ? 'normal' : 'bold';
       }
 
       // Highlight the active/current field (focus style)
