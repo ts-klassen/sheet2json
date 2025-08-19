@@ -54,6 +54,85 @@ export default class OverlayConfigDialog {
     title.textContent = `Settings for ${displayName}`;
     dialog.appendChild(title);
 
+    // Section header: Identity (field + index)
+    const identityHeader = document.createElement('h4');
+    identityHeader.textContent = 'Identity';
+    identityHeader.style.margin = '0.5em 0 0.25em 0';
+    dialog.appendChild(identityHeader);
+
+    // Field select
+    const fieldLabel = document.createElement('label');
+    fieldLabel.textContent = 'Field:';
+    fieldLabel.style.display = 'block';
+    const fieldSelect = document.createElement('select');
+    fieldSelect.style.width = '100%';
+    fieldSelect.style.marginBottom = '0.5em';
+    fieldLabel.appendChild(fieldSelect);
+
+    // Index select (1-based for UX, 0-based in data)
+    const indexLabel = document.createElement('label');
+    indexLabel.textContent = 'Index (1-based):';
+    indexLabel.style.display = 'block';
+    const indexSelect = document.createElement('select');
+    indexSelect.style.width = '100%';
+    indexSelect.style.marginBottom = '0.5em';
+    indexLabel.appendChild(indexSelect);
+
+    // Populate field options from schema
+    const allProps = getSchemaProperties(store.getState().schema) || {};
+    const allFields = Object.keys(allProps);
+    fieldSelect.innerHTML = '';
+    allFields.forEach((f) => {
+      const opt = document.createElement('option');
+      opt.value = f;
+      const meta = allProps[f] || {};
+      opt.textContent = meta.description || meta.title || f;
+      fieldSelect.appendChild(opt);
+    });
+    fieldSelect.value = this.field;
+
+    // Helper to detect if a field is an array property
+    const isArrayField = (fieldName) => {
+      const meta = allProps[fieldName] || {};
+      return meta && meta.type === 'array';
+    };
+
+    // Populate index options for the selected field.
+    // For array fields, allow 1..N+1 (append). For scalar, force 1 and disable.
+    const populateIndexOptions = (fieldName) => {
+      const mapping = store.getState().mapping || {};
+      const list = Array.isArray(mapping[fieldName]) ? mapping[fieldName] : [];
+      // When moving within the same field, pretend the current entry is removed first
+      const baseCount = list.length - (fieldName === this.field ? 1 : 0);
+      indexSelect.innerHTML = '';
+      let max = 1;
+      if (isArrayField(fieldName)) {
+        max = Math.max(1, baseCount + 1);
+        indexSelect.disabled = false;
+      } else {
+        max = 1;
+        indexSelect.disabled = true;
+      }
+      for (let i = 1; i <= max; i++) {
+        const opt = document.createElement('option');
+        opt.value = String(i - 1); // 0-based value
+        opt.textContent = String(i);
+        indexSelect.appendChild(opt);
+      }
+
+      // Default selection: current index when field unchanged, else append
+      if (fieldName === this.field) {
+        indexSelect.value = String(Math.max(0, Math.min(max - 1, this.index)));
+      } else {
+        indexSelect.value = String(max - 1);
+      }
+    };
+    populateIndexOptions(fieldSelect.value);
+    fieldSelect.addEventListener('change', () => populateIndexOptions(fieldSelect.value));
+
+    dialog.appendChild(fieldLabel);
+    dialog.appendChild(indexLabel);
+
     // Section header: Movement
     const movementHeader = document.createElement('h4');
     movementHeader.textContent = 'Movement';
@@ -144,7 +223,7 @@ export default class OverlayConfigDialog {
       followFieldSelect.appendChild(opt);
     });
 
-    const populateIndexOptions = (fieldName) => {
+    const populateFollowIndexOptions = (fieldName) => {
       followIndexSelect.innerHTML = '';
       const count = (mapping[fieldName] || []).length;
       for (let i = 0; i < count; i++) {
@@ -154,7 +233,7 @@ export default class OverlayConfigDialog {
         followIndexSelect.appendChild(opt);
       }
     };
-    followFieldSelect.addEventListener('change', () => populateIndexOptions(followFieldSelect.value));
+    followFieldSelect.addEventListener('change', () => populateFollowIndexOptions(followFieldSelect.value));
     if (typeof cfg.script === 'string') {
       scriptRadio.input.checked = true;
       rowLabel.style.display = 'none';
@@ -173,7 +252,7 @@ export default class OverlayConfigDialog {
       if (fields.includes(f)) {
         followFieldSelect.value = f;
       }
-      populateIndexOptions(followFieldSelect.value || fields[0]);
+      populateFollowIndexOptions(followFieldSelect.value || fields[0]);
       const idx = Number.isFinite(cfg.follow.index) ? String(cfg.follow.index) : '0';
       followIndexSelect.value = idx;
     } else if (cfg.jumpNext) {
@@ -227,7 +306,7 @@ export default class OverlayConfigDialog {
         if (!followFieldSelect.value && fields.length) {
           followFieldSelect.value = fields[0];
         }
-        populateIndexOptions(followFieldSelect.value);
+        populateFollowIndexOptions(followFieldSelect.value);
       }
     });
 
@@ -260,7 +339,18 @@ export default class OverlayConfigDialog {
     saveBtn.style.fontWeight = '600';
     saveBtn.style.textShadow = '0 1px 0 rgba(0,0,0,0.2)';
     saveBtn.addEventListener('click', () =>
-      this._save(stepRadio.input.checked, jumpRadio.input.checked, followRadio.input.checked, followFieldSelect.value, followIndexSelect.value, rowInput.value, colInput.value, scriptArea.value)
+      this._save(
+        fieldSelect.value,
+        indexSelect.value,
+        stepRadio.input.checked,
+        jumpRadio.input.checked,
+        followRadio.input.checked,
+        followFieldSelect.value,
+        followIndexSelect.value,
+        rowInput.value,
+        colInput.value,
+        scriptArea.value
+      )
     );
 
     const cancelBtn = document.createElement('button');
@@ -315,12 +405,17 @@ export default class OverlayConfigDialog {
     return { wrapper, input };
   }
 
-  _save(isStepMode, isJumpMode, isFollowMode, followField, followIndex, rowVal, colVal, scriptValue) {
+  _save(destFieldRaw, destIndexRaw, isStepMode, isJumpMode, isFollowMode, followField, followIndex, rowVal, colVal, scriptValue) {
     const state = store.getState();
     const mapping = { ...state.mapping };
-    mapping[this.field] = [...(mapping[this.field] || [])];
-    const base = { ...mapping[this.field][this.index] };
+    const srcList = Array.isArray(mapping[this.field]) ? [...mapping[this.field]] : [];
+    if (this.index < 0 || this.index >= srcList.length) { this.destroy(); return; }
 
+    // Start from the current entry (address + any existing config)
+    const entry = { ...srcList[this.index] };
+    const base = { ...entry };
+
+    // Apply movement/follow/script config based on selected mode
     if (isFollowMode) {
       base.follow = { field: String(followField || ''), index: parseInt(followIndex, 10) || 0 };
       delete base.dy;
@@ -345,7 +440,53 @@ export default class OverlayConfigDialog {
       delete base.follow;
     }
 
-    mapping[this.field][this.index] = base;
+    const destField = String(destFieldRaw || this.field);
+    let destIndex = Number.isFinite(parseInt(destIndexRaw, 10)) ? parseInt(destIndexRaw, 10) : this.index;
+
+    // If identity unchanged, simple in-place update
+    if (destField === this.field && destIndex === this.index) {
+      const list = [...srcList];
+      list[this.index] = base;
+      mapping[this.field] = list;
+      store.set('mapping', mapping);
+      this.destroy();
+      return;
+    }
+
+    // Remove from source field
+    srcList.splice(this.index, 1);
+    if (srcList.length > 0) mapping[this.field] = srcList; else delete mapping[this.field];
+
+    // Prepare destination list and constraints
+    const propsAll = getSchemaProperties(store.getState().schema) || {};
+    const destMeta = propsAll[destField] || {};
+    const destIsArray = destMeta && destMeta.type === 'array';
+    let destList = Array.isArray(mapping[destField]) ? [...mapping[destField]] : [];
+
+    // Prevent duplicates at destination (same sheet,row,col)
+    const dupIdx = destList.findIndex(
+      (a) => a && a.sheet === base.sheet && a.row === base.row && a.col === base.col
+    );
+    if (!destIsArray) {
+      // Scalars: single entry only – replace existing or create new at [0]
+      if (dupIdx >= 0) {
+        destIndex = dupIdx; // overwrite duplicate
+      } else {
+        destIndex = 0;
+      }
+      destList[destIndex] = { ...base };
+      destList = destList.slice(0, 1); // ensure only one entry remains
+    } else {
+      if (dupIdx >= 0) {
+        destList[dupIdx] = { ...destList[dupIdx], ...base };
+      } else {
+        const clampIndex = (i) => Math.max(0, Math.min(i, destList.length));
+        const at = clampIndex(destIndex);
+        destList.splice(at, 0, { ...base });
+      }
+    }
+
+    mapping[destField] = destList;
     store.set('mapping', mapping);
     this.destroy();
   }
