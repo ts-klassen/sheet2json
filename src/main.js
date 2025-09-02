@@ -249,7 +249,9 @@ function makeButton(label, onClick) {
   const btn = document.createElement('button');
   btn.textContent = label;
   btn.style.marginRight = '0.5em';
-  btn.addEventListener('click', onClick);
+  // Forward the click event to the handler so callers can
+  // inspect modifier keys (e.g. Shift-click for power actions).
+  btn.addEventListener('click', (e) => onClick(e));
   return btn;
 }
 
@@ -311,40 +313,53 @@ controlsTop.appendChild(
 );
 
 // "Confirm & Next" button – snapshot current mapping & shift down one row
-const confirmNextBtn = makeButton(t('controls.confirm_next'), async () => {
+// Shift-click performs the operation 10 times in a row.
+const confirmNextBtn = makeButton(t('controls.confirm_next'), async (e) => {
   try {
-    const state = store.getState();
-    const mapping = state.mapping;
-    if (!mapping || Object.keys(mapping).length === 0) {
-      await confirmDialog({
-        title: t('dialogs.nothing_to_confirm_title'),
-        message: t('dialogs.nothing_to_confirm_message'),
-        confirmText: t('dialogs.ok'),
-        cancelText: t('dialogs.dismiss')
-      });
-      return;
+    const repeat = e && e.shiftKey ? 10 : 1;
+    let warnedOnce = false;
+
+    for (let i = 0; i < repeat; i++) {
+      const state = store.getState();
+      const mapping = state.mapping;
+      if (!mapping || Object.keys(mapping).length === 0) {
+        if (i === 0) {
+          await confirmDialog({
+            title: t('dialogs.nothing_to_confirm_title'),
+            message: t('dialogs.nothing_to_confirm_message'),
+            confirmText: t('dialogs.ok'),
+            cancelText: t('dialogs.dismiss')
+          });
+        }
+        break;
+      }
+
+      // Warn on missing required fields for the first iteration only; allow force-continue
+      if (!warnedOnce) {
+        const missing = findMissingRequiredFields(state.schema, mapping);
+        const props = getSchemaProperties(state.schema) || {};
+        const toDisplay = (field) => {
+          const meta = props[field] || {};
+          return meta.description || meta.title || field;
+        };
+        if (missing.length > 0) {
+          const proceed = await confirmDialog({
+            title: t('dialogs.missing_required_title'),
+            message: t('dialogs.missing_required_message_record'),
+            items: missing.map(toDisplay),
+            note: t('dialogs.missing_required_note'),
+            confirmText: t('dialogs.continue'),
+            cancelText: t('dialogs.cancel')
+          });
+          if (!proceed) return;
+        }
+        warnedOnce = true;
+      }
+
+      shiftMappingDown();
+      // Public interface notification: a successful confirm occurred.
+      __notifyConfirm();
     }
-    // Warn on missing required fields for this record; allow force-continue
-    const missing = findMissingRequiredFields(state.schema, mapping);
-    const props = getSchemaProperties(state.schema) || {};
-    const toDisplay = (field) => {
-      const meta = props[field] || {};
-      return meta.description || meta.title || field;
-    };
-    if (missing.length > 0) {
-      const proceed = await confirmDialog({
-        title: t('dialogs.missing_required_title'),
-        message: t('dialogs.missing_required_message_record'),
-        items: missing.map(toDisplay),
-        note: t('dialogs.missing_required_note'),
-        confirmText: t('dialogs.continue'),
-        cancelText: t('dialogs.cancel')
-      });
-      if (!proceed) return;
-    }
-    shiftMappingDown();
-    // Public interface notification: a successful confirm occurred.
-    __notifyConfirm();
   } catch (err) {
     await confirmDialog({
       title: t('errors.confirm_title'),
