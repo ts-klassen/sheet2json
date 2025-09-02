@@ -374,24 +374,27 @@ controlsTop.appendChild(confirmNextBtn);
 
 // Undo button – remove the last confirmed snapshot and restore overlays
 controlsTop.appendChild(
-  makeButton(t('controls.undo'), async () => {
+  makeButton(t('controls.undo'), async (e) => {
     try {
-      const { records } = store.getState();
-      if (!Array.isArray(records) || records.length === 0) {
-        // Nothing to undo; fail silently for smoother UX
-        return;
+      const repeat = e && e.shiftKey ? 10 : 1;
+      for (let i = 0; i < repeat; i++) {
+        const { records } = store.getState();
+        if (!Array.isArray(records) || records.length === 0) {
+          // Nothing to undo; stop quietly
+          break;
+        }
+        const prevSnapshot = records[records.length - 1];
+        const trimmed = records.slice(0, -1);
+        // First remove the last record so exports reflect the undo
+        store.set('records', trimmed);
+        // Then restore mapping to the popped snapshot so overlays move back
+        if (prevSnapshot && typeof prevSnapshot === 'object') {
+          store.set('mapping', prevSnapshot);
+        }
+        // Notify integrations about undo and generic change
+        __notifyUndo();
       }
-      const prevSnapshot = records[records.length - 1];
-      const trimmed = records.slice(0, -1);
-      // First remove the last record so exports reflect the undo
-      store.set('records', trimmed);
-      // Then restore mapping to the popped snapshot so overlays move back
-      if (prevSnapshot && typeof prevSnapshot === 'object') {
-        store.set('mapping', prevSnapshot);
-      }
-      // Notify integrations about undo and generic change
-  __notifyUndo();
-  } catch (err) {
+    } catch (err) {
       await confirmDialog({
         title: t('errors.undo_title'),
         message: err.message || t('errors.undo_message'),
