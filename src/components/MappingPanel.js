@@ -1,6 +1,7 @@
 import { store } from '../store.js';
 import { colourForField, colourFillForField, registerFieldOrder } from '../utils/color.js';
 import { getSchemaProperties } from '../utils/schemaUtils.js';
+import { labelFromMeta } from '../utils/labelUtils.js';
 import DraggableController from '../dnd/DraggableController.js';
 
 /**
@@ -96,7 +97,7 @@ export default class MappingPanel {
 
       const text = document.createElement('span');
       const labelSource = props?.[field] || {};
-      text.textContent = labelSource.description || labelSource.title || field;
+      text.textContent = labelFromMeta(labelSource, field);
       text.style.pointerEvents = 'none';
 
       li.appendChild(swatch);

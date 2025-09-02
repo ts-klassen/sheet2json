@@ -1,5 +1,6 @@
 import { store } from '../store.js';
 import { getSchemaProperties } from '../utils/schemaUtils.js';
+import { labelFromMeta } from '../utils/labelUtils.js';
 
 /**
  * Modal dialog to configure how a specific overlay moves when Confirm & Next
@@ -50,7 +51,7 @@ export default class OverlayConfigDialog {
     const schema = store.getState().schema;
     const propsForTitle = getSchemaProperties(schema) || {};
     const metaForTitle = propsForTitle[this.field] || {};
-    const displayName = metaForTitle.description || metaForTitle.title || this.field;
+    const displayName = labelFromMeta(metaForTitle, this.field);
     try {
       import('../i18n/index.js').then(({ t, onChange }) => {
         const apply = () => { title.textContent = t('overlay.settings_for', { name: displayName }); };
@@ -118,7 +119,7 @@ export default class OverlayConfigDialog {
       const opt = document.createElement('option');
       opt.value = f;
       const meta = allProps[f] || {};
-      opt.textContent = meta.description || meta.title || f;
+      opt.textContent = labelFromMeta(meta, f);
       fieldSelect.appendChild(opt);
     });
     fieldSelect.value = this.field;
@@ -303,7 +304,7 @@ export default class OverlayConfigDialog {
       const opt = document.createElement('option');
       opt.value = f;
       const meta = props[f] || {};
-      opt.textContent = meta.description || meta.title || f;
+      opt.textContent = labelFromMeta(meta, f);
       followFieldSelect.appendChild(opt);
     });
 

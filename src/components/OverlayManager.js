@@ -11,6 +11,7 @@
 import { store } from '../store.js';
 import { colourForField, colourFillForField, colourBorderForField, colourOutlineForField } from '../utils/color.js';
 import { getSchemaProperties } from '../utils/schemaUtils.js';
+import { labelFromMeta } from '../utils/labelUtils.js';
 import DraggableController, {
   OVERLAY_MOVED
 } from '../dnd/DraggableController.js';
@@ -123,8 +124,7 @@ export default class OverlayManager {
         });
 
         const meta = (props && props[field]) || {};
-        const desc = typeof meta.description === 'string' ? meta.description : null;
-        const baseLabel = desc || field;
+        const baseLabel = labelFromMeta(meta, field);
         if (meta && meta.type === 'array') {
           // Show 1-based index for array fields to disambiguate overlays
           overlay.textContent = `${baseLabel} #${index + 1}`;

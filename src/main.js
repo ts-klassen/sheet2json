@@ -11,6 +11,7 @@ import './autoDetector.js';
 import SheetRenderer from './components/SheetRenderer.js';
 import OverlayManager from './components/OverlayManager.js';
 import { shiftMappingDown } from './utils/mappingUtils.js';
+import { labelFromMeta } from './utils/labelUtils.js';
 import ExportDialog from './components/ExportDialog.js';
 import confirmDialog from './components/ConfirmDialog.js';
 import '../styles/styles.css';
@@ -271,10 +272,7 @@ controlsTop.appendChild(
       const snapshots = Array.isArray(state.records) ? state.records : [];
       const schema = state.schema;
       const props = getSchemaProperties(schema) || {};
-      const toDisplay = (field) => {
-        const meta = props[field] || {};
-        return meta.description || meta.title || field;
-      };
+      const toDisplay = (field) => labelFromMeta(props[field] || {}, field);
       // Aggregate missing fields across all snapshots (union)
       const missingSet = new Set();
       if (snapshots.length > 0) {
@@ -338,10 +336,7 @@ const confirmNextBtn = makeButton(t('controls.confirm_next'), async (e) => {
       if (!warnedOnce) {
         const missing = findMissingRequiredFields(state.schema, mapping);
         const props = getSchemaProperties(state.schema) || {};
-        const toDisplay = (field) => {
-          const meta = props[field] || {};
-          return meta.description || meta.title || field;
-        };
+        const toDisplay = (field) => labelFromMeta(props[field] || {}, field);
         if (missing.length > 0) {
           const proceed = await confirmDialog({
             title: t('dialogs.missing_required_title'),
