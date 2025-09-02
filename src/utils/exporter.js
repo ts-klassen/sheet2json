@@ -32,7 +32,8 @@ function mappingToObject(mapping, workbook, schema) {
 
     const transformed = addresses.map(({ sheet, row, col }) => {
       const val = workbook.data[sheet]?.[row]?.[col];
-      const value = val == null ? '' : val; // use empty string for empty cells
+      // Always export values as strings; use empty string for empty cells.
+      const value = val == null ? '' : String(val);
       return {
         cell: toA1(col, row),
         value
