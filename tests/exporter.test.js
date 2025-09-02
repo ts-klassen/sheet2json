@@ -50,6 +50,37 @@ describe('Exporter', () => {
     expect(json.cells.notes[1]).toEqual({ cell: 'A1', value: 'Title' });
   });
 
+  test('buildJson coerces numeric cell values to strings', () => {
+    // Prepare workbook with a number in a cell
+    store.set('workbook', {
+      sheets: ['Sheet1'],
+      activeSheet: 'Sheet1',
+      data: { Sheet1: [[123, 'X']] },
+      merges: {}
+    });
+    store.set('schema', {
+      properties: {
+        qty: { type: 'string' },
+        list: { type: 'array' }
+      }
+    });
+    store.set('mapping', {
+      qty: [{ sheet: 'Sheet1', row: 0, col: 0 }],
+      list: [
+        { sheet: 'Sheet1', row: 0, col: 0 },
+        { sheet: 'Sheet1', row: 0, col: 1 }
+      ]
+    });
+
+    const m = JSON.parse(JSON.stringify(store.getState().mapping));
+    store.set('records', [m]);
+    const json = buildJson();
+
+    expect(json.cells.qty).toEqual({ cell: 'A1', value: '123' });
+    expect(json.cells.list[0]).toEqual({ cell: 'A1', value: '123' });
+    expect(json.cells.list[1]).toEqual({ cell: 'B1', value: 'X' });
+  });
+
   test('buildJson returns array of objects based on records', () => {
     // switch to array schema
     store.set('schema', {
