@@ -5,7 +5,7 @@
 
 import { read, utils } from 'xlsx';
 
-const SUPPORTED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
+const SUPPORTED_EXTENSIONS = ['.xlsx', '.xlsm', '.xlsb', '.xls', '.ods', '.csv'];
 
 function getExtension(name = '') {
   const match = /\.[^.]+$/.exec(name);
@@ -31,7 +31,8 @@ export function parseArrayBuffer(buffer, fileName = '') {
   const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
 
   // Basic signature validation to catch obvious corrupt files before SheetJS fallback.
-  if (ext === '.xlsx' && !(uint8[0] === 0x50 && uint8[1] === 0x4b)) {
+  const isZipLike = ['.xlsx', '.xlsm', '.xlsb', '.ods'].includes(ext);
+  if (isZipLike && !(uint8[0] === 0x50 && uint8[1] === 0x4b)) {
     throw new Error('Unsupported or corrupt file');
   }
   if (ext === '.xls' && !(uint8[0] === 0xd0 && uint8[1] === 0xcf)) {

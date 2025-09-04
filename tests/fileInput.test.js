@@ -16,7 +16,7 @@ describe('FileInput component', () => {
     const fi = new FileInput({ parent: container });
     const input = container.querySelector('input[type="file"]');
     expect(input).not.toBeNull();
-    expect(input.accept).toBe('.xlsx,.xls,.csv');
+    expect(input.accept).toBe('.xlsx,.xlsm,.xlsb,.xls,.ods,.csv');
     fi.destroy();
   });
 

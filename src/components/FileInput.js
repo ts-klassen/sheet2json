@@ -43,7 +43,7 @@ export default class FileInput {
     // Hidden native input retains browser file dialog and accessibility
     this.input = document.createElement('input');
     this.input.type = 'file';
-    this.input.accept = '.xlsx,.xls,.csv';
+    this.input.accept = '.xlsx,.xlsm,.xlsb,.xls,.ods,.csv';
     if (multiple) {
       this.input.multiple = true;
     }
@@ -126,7 +126,7 @@ export default class FileInput {
     const files = Array.from(e.dataTransfer.files || []);
     if (!files.length) return;
     // Filter by allowed extensions to mirror `accept` attribute
-    const allowed = ['.xlsx', '.xls', '.csv'];
+    const allowed = ['.xlsx', '.xlsm', '.xlsb', '.xls', '.ods', '.csv'];
     const picked = files.filter((f) => {
       const name = (f && f.name) ? f.name.toLowerCase() : '';
       return allowed.some((ext) => name.endsWith(ext));
