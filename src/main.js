@@ -15,8 +15,66 @@ import { labelFromMeta } from './utils/labelUtils.js';
 import ExportDialog from './components/ExportDialog.js';
 import confirmDialog from './components/ConfirmDialog.js';
 import '../styles/styles.css';
+import { buildJson, findMissingRequiredFields } from './utils/exporter.js';
+import { getSchemaProperties } from './utils/schemaUtils.js';
 
-await i18n.init();
+// Wrap bootstrap in async IIFE to avoid top-level await in classic scripts
+(async function bootstrap() {
+
+  // Public API: define early so integrations/tests can access immediately
+  const __PUBLIC_API_VERSION = '1.1.0';
+  const __confirmSubscribers = new Set();
+  const __undoSubscribers = new Set();
+  const __changeSubscribers = new Set();
+
+  function __dispatchReady(version) {
+    try { document.dispatchEvent(new CustomEvent('sheet2json:ready', { detail: { version } })); } catch (_) {}
+  }
+  function __dispatchConfirm(json) {
+    try { document.dispatchEvent(new CustomEvent('sheet2json:confirm', { detail: json })); } catch (_) {}
+  }
+  function __dispatchUndo(json) {
+    try { document.dispatchEvent(new CustomEvent('sheet2json:undo', { detail: json })); } catch (_) {}
+  }
+  function __dispatchChange(json) {
+    try { document.dispatchEvent(new CustomEvent('sheet2json:change', { detail: json })); } catch (_) {}
+  }
+  function __notifyConfirm() {
+    let json;
+    try { json = buildJson(); } catch (_) { json = null; }
+    if (json != null) {
+      __confirmSubscribers.forEach((cb) => { try { cb(json); } catch (_) {} });
+      __dispatchConfirm(json);
+    }
+    __changeSubscribers.forEach((cb) => { try { cb(json); } catch (_) {} });
+    __dispatchChange(json);
+  }
+  function __notifyUndo() {
+    let json;
+    try { json = buildJson(); } catch (_) { json = null; }
+    __undoSubscribers.forEach((cb) => { try { cb(json); } catch (_) {} });
+    __dispatchUndo(json);
+    __changeSubscribers.forEach((cb) => { try { cb(json); } catch (_) {} });
+    __dispatchChange(json);
+  }
+  function __ensurePublicApi() {
+    if (typeof window === 'undefined') return;
+    if (window.Sheet2JSON && typeof window.Sheet2JSON === 'object') return;
+    const api = Object.freeze({
+      VERSION: __PUBLIC_API_VERSION,
+      getJson: () => buildJson(),
+      onConfirm: (cb) => { if (typeof cb !== 'function') throw new TypeError('onConfirm(callback) requires a function'); __confirmSubscribers.add(cb); return () => __confirmSubscribers.delete(cb); },
+      onUndo: (cb) => { if (typeof cb !== 'function') throw new TypeError('onUndo(callback) requires a function'); __undoSubscribers.add(cb); return () => __undoSubscribers.delete(cb); },
+      onChange: (cb) => { if (typeof cb !== 'function') throw new TypeError('onChange(callback) requires a function'); __changeSubscribers.add(cb); return () => __changeSubscribers.delete(cb); }
+    });
+    Object.defineProperty(window, 'Sheet2JSON', { value: api, writable: false, configurable: false });
+    __dispatchReady(api.VERSION);
+  }
+
+  __ensurePublicApi();
+
+  // Initialize i18n asynchronously; do not block UI render
+  try { i18n.init().catch(() => {}); } catch (_) {}
 console.log('Sheet-to-JSON Mapper loaded');
 
 const appEl = document.getElementById('app');
@@ -80,158 +138,6 @@ async function loadSchemaFromQuery() {
 
 loadSchemaFromQuery();
 
-// ===========================================================================
-// PUBLIC INTERFACE (STABLE) — DO NOT BREAK
-// ---------------------------------------------------------------------------
-// This module exposes a small, neutral, and versioned public API for
-// integrations. Host applications MUST use ONLY this interface. Internal DOM,
-// labels, and private functions may change at any time; the API below MUST
-// remain backward compatible. If expanded, bump VERSION and preserve existing
-// behavior.
-//
-// API surface (attached to window.Sheet2JSON):
-//   - VERSION: string — semantic API version (e.g. '1.1.0').
-//   - getJson(): object — returns current exported JSON, or throws if not ready.
-//   - onConfirm(callback): function — subscribes to updates after each confirm
-//       action. Returns an unsubscribe function. Subscriber errors are ignored.
-//   - onUndo(callback): function — subscribes to updates after an undo. Returns
-//       an unsubscribe function. Callback receives latest JSON or null.
-//   - onChange(callback): function — subscribes to updates after any change
-//       (confirm or undo). Returns an unsubscribe function. Callback receives
-//       latest JSON or null.
-//
-// Additionally, two document-level CustomEvents are dispatched:
-//   - 'sheet2json:ready'   — fired once when the API becomes available.
-//       detail: { version: string }
-//   - 'sheet2json:confirm' — fired after each successful confirm.
-//       detail: <json object>
-//   - 'sheet2json:undo'    — fired after an undo.
-//       detail: <json object | null>
-//   - 'sheet2json:change'  — fired after confirm and undo.
-//       detail: <json object | null>
-//
-// IMPORTANT:
-//   - This interface is intentionally neutral (no app-specific details).
-//   - Do NOT remove or rename these members/events. Additive changes only.
-// ===========================================================================
-
-import { buildJson, findMissingRequiredFields } from './utils/exporter.js';
-import { getSchemaProperties } from './utils/schemaUtils.js';
-
-const __PUBLIC_API_VERSION = '1.1.0';
-const __confirmSubscribers = new Set();
-const __undoSubscribers = new Set();
-const __changeSubscribers = new Set();
-
-function __dispatchReady(version) {
-  try {
-    document.dispatchEvent(
-      new CustomEvent('sheet2json:ready', { detail: { version } })
-    );
-  } catch (_) { /* ignore */ }
-}
-
-function __dispatchConfirm(json) {
-  try {
-    document.dispatchEvent(
-      new CustomEvent('sheet2json:confirm', { detail: json })
-    );
-  } catch (_) { /* ignore */ }
-}
-
-function __dispatchUndo(json) {
-  try {
-    document.dispatchEvent(
-      new CustomEvent('sheet2json:undo', { detail: json })
-    );
-  } catch (_) { /* ignore */ }
-}
-
-function __dispatchChange(json) {
-  try {
-    document.dispatchEvent(
-      new CustomEvent('sheet2json:change', { detail: json })
-    );
-  } catch (_) { /* ignore */ }
-}
-
-function __notifyConfirm() {
-  let json;
-  try {
-    json = buildJson();
-  } catch (_) {
-    json = null; // best-effort; never throw from notifier
-  }
-  if (json != null) {
-    __confirmSubscribers.forEach((cb) => {
-      try { cb(json); } catch (_) { /* ignore subscriber errors */ }
-    });
-    __dispatchConfirm(json);
-  }
-  // Always treat confirm as a change; allow consumers to handle null
-  __changeSubscribers.forEach((cb) => {
-    try { cb(json); } catch (_) { /* ignore subscriber errors */ }
-  });
-  __dispatchChange(json);
-}
-
-function __notifyUndo() {
-  let json;
-  try {
-    json = buildJson();
-  } catch (_) {
-    json = null; // when no confirmed records remain
-  }
-  __undoSubscribers.forEach((cb) => {
-    try { cb(json); } catch (_) { /* ignore subscriber errors */ }
-  });
-  __dispatchUndo(json);
-  __changeSubscribers.forEach((cb) => {
-    try { cb(json); } catch (_) { /* ignore subscriber errors */ }
-  });
-  __dispatchChange(json);
-}
-
-function __ensurePublicApi() {
-  if (typeof window === 'undefined') return;
-  if (window.Sheet2JSON && typeof window.Sheet2JSON === 'object') {
-    // Already defined — preserve the first definition for stability.
-    return;
-  }
-  const api = Object.freeze({
-    VERSION: __PUBLIC_API_VERSION,
-    getJson: () => buildJson(),
-    onConfirm: (cb) => {
-      if (typeof cb !== 'function') {
-        throw new TypeError('onConfirm(callback) requires a function');
-      }
-      __confirmSubscribers.add(cb);
-      return () => __confirmSubscribers.delete(cb);
-    },
-    onUndo: (cb) => {
-      if (typeof cb !== 'function') {
-        throw new TypeError('onUndo(callback) requires a function');
-      }
-      __undoSubscribers.add(cb);
-      return () => __undoSubscribers.delete(cb);
-    },
-    onChange: (cb) => {
-      if (typeof cb !== 'function') {
-        throw new TypeError('onChange(callback) requires a function');
-      }
-      __changeSubscribers.add(cb);
-      return () => __changeSubscribers.delete(cb);
-    }
-  });
-  Object.defineProperty(window, 'Sheet2JSON', {
-    value: api,
-    writable: false,
-    configurable: false
-  });
-  __dispatchReady(api.VERSION);
-}
-
-__ensurePublicApi();
 // Control buttons – persists ("sticky") at the top of the viewport so the
 // primary workflow actions remain accessible even when the user scrolls the
 // worksheet far down.  The actual positioning rules live in the global
@@ -483,3 +389,5 @@ function handleGlobalDrop(e) {
 
 document.addEventListener('dragover', handleGlobalDragOver);
 document.addEventListener('drop', handleGlobalDrop);
+
+})();

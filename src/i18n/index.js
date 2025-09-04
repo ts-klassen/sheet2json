@@ -2,6 +2,33 @@ import { load as yamlLoad } from 'js-yaml';
 
 const listeners = new Set();
 let catalogs = null; // { en: {...}, ja: {...} }
+// Minimal built-in EN fallback so tests and offline builds still render
+// essential labels when network fetch is unavailable (e.g., JSDOM).
+const FALLBACK_CATALOGS = {
+  en: {
+    app: { title: 'Sheet-to-JSON Mapper' },
+    controls: {
+      confirm_next: 'Confirm & Next',
+      undo: 'Undo',
+      show_merged_shadow: 'Show shadow text in merged cells'
+    },
+    dialogs: { ok: 'OK', dismiss: 'Dismiss' },
+    errors: {
+      load_schema_title: 'Failed to load schema',
+      load_schema_message: 'Unable to fetch the schema URL.',
+      confirm_title: 'Confirm failed',
+      confirm_message: 'Unable to confirm the current mapping.',
+      undo_title: 'Undo failed',
+      undo_message: 'Unable to undo the last action.',
+      update_failed_title: 'Update failed',
+      update_failed_message: 'Unable to update the setting.'
+    }
+  },
+  ja: {}
+};
+
+// In non-browser/test environments without fetch, prime fallback catalogs
+try { if (typeof fetch === 'undefined') catalogs = FALLBACK_CATALOGS; } catch (_) {}
 let locale = 'en';
 
 function getLocale() {
@@ -139,7 +166,13 @@ async function setLocale(next) {
 }
 
 async function init() {
-  catalogs = await loadCatalogs();
+  try {
+    catalogs = await loadCatalogs();
+  } catch (err) {
+    // Fallback gracefully in non-browser/test environments without fetch
+    catalogs = FALLBACK_CATALOGS;
+    try { console.warn('i18n: using fallback catalogs', err); } catch (_) {}
+  }
   locale = detectLocale();
   try { document.documentElement.lang = locale; } catch (_) { /* ignore */ }
   emitChange();
