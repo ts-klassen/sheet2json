@@ -170,8 +170,7 @@ function makeButton(label, onClick) {
 // document-level inline-error listener removed
 
 // Export JSON
-controlsTop.appendChild(
-  makeButton(t('controls.inspect_json'), async () => {
+const inspectBtn = makeButton('', async () => {
     try {
       // Validate required fields across the effective item schema.
       const state = store.getState();
@@ -213,12 +212,12 @@ controlsTop.appendChild(
         cancelText: t('dialogs.dismiss')
       });
     }
-  })
-);
+  });
+controlsTop.appendChild(inspectBtn);
 
 // "Confirm & Next" button – snapshot current mapping & shift down one row
 // Shift-click performs the operation 10 times in a row.
-const confirmNextBtn = makeButton(t('controls.confirm_next'), async (e) => {
+const confirmNextBtn = makeButton('', async (e) => {
   try {
     const repeat = e && e.shiftKey ? 10 : 1;
     let warnedOnce = false;
@@ -274,8 +273,7 @@ const confirmNextBtn = makeButton(t('controls.confirm_next'), async (e) => {
 controlsTop.appendChild(confirmNextBtn);
 
 // Undo button – remove the last confirmed snapshot and restore overlays
-controlsTop.appendChild(
-  makeButton(t('controls.undo'), async (e) => {
+const undoBtn = makeButton('', async (e) => {
     try {
       const repeat = e && e.shiftKey ? 10 : 1;
       for (let i = 0; i < repeat; i++) {
@@ -303,8 +301,8 @@ controlsTop.appendChild(
         cancelText: t('dialogs.dismiss')
       });
     }
-  })
-);
+  });
+controlsTop.appendChild(undoBtn);
 
 appEl.appendChild(controls);
 
@@ -338,6 +336,14 @@ function updateShadowLabel() {
 updateShadowLabel();
 onI18nChange(updateShadowLabel);
 controlsTop.appendChild(shadowToggleLabel);
+
+function updateControlLabels() {
+  inspectBtn.textContent = t('controls.inspect_json');
+  confirmNextBtn.textContent = t('controls.confirm_next');
+  undoBtn.textContent = t('controls.undo');
+}
+updateControlLabels();
+onI18nChange(updateControlLabels);
 
 
 new MappingPanel({ parent: controlsBottom });
