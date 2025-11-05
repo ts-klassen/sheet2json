@@ -200,9 +200,9 @@ export default class OverlayConfigDialog {
       });
     } catch (_) { /* ignore */ }
 
-    // Order: Jump to next value (top), Exact offset, Follow, Custom JavaScript
-    modeWrapper.appendChild(jumpRadio.wrapper);
+    // Order: Exact offset (default), Jump to next value, Follow, Custom JavaScript
     modeWrapper.appendChild(stepRadio.wrapper);
+    modeWrapper.appendChild(jumpRadio.wrapper);
     modeWrapper.appendChild(followRadio.wrapper);
     modeWrapper.appendChild(scriptRadio.wrapper);
     dialog.appendChild(modeWrapper);
@@ -369,9 +369,11 @@ export default class OverlayConfigDialog {
     // Switch UI on radio change
     stepRadio.input.addEventListener('change', () => {
       if (stepRadio.input.checked) {
-      rowLabel.style.display = 'block';
-      colLabel.style.display = 'block';
-      scriptArea.style.display = 'none';
+        rowLabel.style.display = 'block';
+        colLabel.style.display = 'block';
+        scriptArea.style.display = 'none';
+        followFieldLabel.style.display = 'none';
+        followIndexLabel.style.display = 'none';
       }
     });
     scriptRadio.input.addEventListener('change', () => {
