@@ -302,7 +302,7 @@ export default class SheetRenderer {
     const sheet = sheetFromDetail || state.workbook?.activeSheet;
     if (!sheet) return;
 
-    const newAddr = { sheet, row, col, dy: 1, dx: 0, jumpNext: true };
+    const newAddr = { sheet, row, col, dy: 1, dx: 0 };
     const mapping = { ...state.mapping };
     const existing = mapping[field] ? [...mapping[field]] : [];
 
@@ -479,7 +479,7 @@ export default class SheetRenderer {
     if (!sheet) return;
 
     // Update mapping
-    const newAddr = { sheet, row, col, dy: 1, dx: 0, jumpNext: true };
+    const newAddr = { sheet, row, col, dy: 1, dx: 0 };
     const mapping = { ...state.mapping };
     const existing = mapping[field] ? [...mapping[field]] : [];
 
