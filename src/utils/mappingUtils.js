@@ -19,14 +19,19 @@ export function deepCloneMapping(mapping) {
  * worksheet length, it is ignored (mapping for that cell is removed).
  * Returns the updated mapping object.
  */
-export function shiftMappingDown() {
+export function shiftMappingDown(options = {}) {
   const { workbook, mapping, records } = store.getState();
   if (!workbook || !mapping) return mapping;
 
   // Snapshot current mapping before shifting
-  if (Object.keys(mapping).length) {
+  {
     const snapshot = deepCloneMapping(mapping);
-    store.set('records', [...records, snapshot]);
+    if (typeof options.snapshotMutator === 'function') {
+      options.snapshotMutator(snapshot);
+    }
+    if (Object.keys(snapshot).length) {
+      store.set('records', [...records, snapshot]);
+    }
   }
 
   const shadowCache = new Map(); // sheetName -> Set('r:c') of shadow cells

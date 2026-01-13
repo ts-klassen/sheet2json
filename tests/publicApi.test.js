@@ -1,15 +1,11 @@
 import fs from 'fs';
+import { ensureBuilt } from './helpers/ensureBuilt.js';
 
 // Note: This is an integration-style test that loads the built bundle
 // (dist/bundle.js) into JSDOM by injecting a <script> with inline content.
 // It verifies the public API callbacks and events for confirm/undo/change.
 
 describe('Public API integration', () => {
-  beforeEach(() => {
-    // Fresh DOM with #app like dist/index.html
-    document.body.innerHTML = '<div id="app"></div>';
-  });
-
   function loadBundle() {
     const src = fs.readFileSync('dist/bundle.js', 'utf8');
     const script = document.createElement('script');
@@ -23,6 +19,9 @@ describe('Public API integration', () => {
   }
 
   test('onConfirm/onUndo/onChange callbacks and events', () => {
+    // Fresh DOM with #app like dist/index.html
+    document.body.innerHTML = '<div id="app"></div>';
+    ensureBuilt();
     loadBundle();
     expect(window.Sheet2JSON).toBeTruthy();
     // Minimal state: workbook, schema, mapping
@@ -81,8 +80,21 @@ describe('Public API integration', () => {
     expect(undos[0] === null || typeof undos[0] === 'object').toBe(true);
     expect(evs.undo[0] === null || typeof evs.undo[0] === 'object').toBe(true);
 
+    // Dummy & Next should appear when schema includes dummy_flag and should not
+    // poison mapping when undone (undo uses mapping snapshots to restore overlays).
+    store.set('schema', { type: 'object', properties: { dummy_flag: { type: 'object' } } });
+    store.set('mapping', {});
+    store.set('records', []);
+
+    const dummyBtn = getButtonByText('Dummy & Next');
+    expect(dummyBtn).toBeTruthy();
+    dummyBtn.click();
+    expect(confirms[confirms.length - 1]).toEqual({ cells: { dummy_flag: { cell: '', value: '1' } } });
+
+    undoBtn.click();
+    expect(store.getState().mapping.dummy_flag).toBeUndefined();
+
     // Cleanup subscriptions
     offConfirm(); offUndo(); offChange();
   });
 });
-

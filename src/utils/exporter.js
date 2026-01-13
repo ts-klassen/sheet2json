@@ -30,15 +30,25 @@ function mappingToObject(mapping, workbook, schema) {
     const isArray = prop.type === 'array';
     const addresses = Array.isArray(mapping?.[field]) ? mapping[field] : [];
 
-    const transformed = addresses.map(({ sheet, row, col }) => {
-      const val = workbook.data[sheet]?.[row]?.[col];
-      // Always export values as strings; use empty string for empty cells.
-      const value = val == null ? '' : String(val);
-      return {
-        cell: toA1(col, row),
-        value
-      };
-    });
+    const transformed = addresses
+      .map((addr) => {
+        if (!addr || typeof addr !== 'object') return null;
+        if (Object.prototype.hasOwnProperty.call(addr, 'literal')) {
+          return {
+            cell: addr.cell == null ? '' : String(addr.cell),
+            value: addr.literal == null ? '' : String(addr.literal)
+          };
+        }
+        const { sheet, row, col } = addr;
+        const val = workbook.data[sheet]?.[row]?.[col];
+        // Always export values as strings; use empty string for empty cells.
+        const value = val == null ? '' : String(val);
+        return {
+          cell: toA1(col, row),
+          value
+        };
+      })
+      .filter(Boolean);
 
     if (isArray) {
       // Include arrays only when mapped or required; otherwise omit.

@@ -7,6 +7,9 @@ controls.inspect_json:
 controls.confirm_next:
   en: "Confirm & Next"
   ja: "確定して次に進む"
+controls.dummy_next:
+  en: "Dummy & Next"
+  ja: "ダミーとして次に進む"
 controls.undo:
   en: "Undo"
   ja: "元に戻す"

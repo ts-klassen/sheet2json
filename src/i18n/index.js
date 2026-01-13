@@ -9,6 +9,7 @@ const FALLBACK_CATALOGS = {
     app: { title: 'Sheet-to-JSON Mapper' },
     controls: {
       confirm_next: 'Confirm & Next',
+      dummy_next: 'Dummy & Next',
       undo: 'Undo',
       show_merged_shadow: 'Show shadow text in merged cells'
     },

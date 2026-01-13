@@ -162,6 +162,18 @@ function makeButton(label, onClick) {
   return btn;
 }
 
+function _sanitizeMappingForUi(mapping) {
+  const cleaned = {};
+  Object.entries(mapping || {}).forEach(([field, addresses]) => {
+    if (!Array.isArray(addresses)) return;
+    const keep = addresses.filter(
+      (addr) => addr && typeof addr === 'object' && Number.isFinite(addr.row) && Number.isFinite(addr.col)
+    );
+    if (keep.length) cleaned[field] = keep.map((addr) => ({ ...addr }));
+  });
+  return cleaned;
+}
+
 // Inline error helpers removed (using modal confirms instead)
 
 // Template save/load feature removed
@@ -215,9 +227,7 @@ const inspectBtn = makeButton('', async () => {
   });
 controlsTop.appendChild(inspectBtn);
 
-// "Confirm & Next" button – snapshot current mapping & shift down one row
-// Shift-click performs the operation 10 times in a row.
-const confirmNextBtn = makeButton('', async (e) => {
+async function confirmAndNext(e, { dummy = false } = {}) {
   try {
     const repeat = e && e.shiftKey ? 10 : 1;
     let warnedOnce = false;
@@ -226,7 +236,7 @@ const confirmNextBtn = makeButton('', async (e) => {
       const state = store.getState();
       const mapping = state.mapping;
       if (!mapping || Object.keys(mapping).length === 0) {
-        if (i === 0) {
+        if (!dummy && i === 0) {
           await confirmDialog({
             title: t('dialogs.nothing_to_confirm_title'),
             message: t('dialogs.nothing_to_confirm_message'),
@@ -234,11 +244,11 @@ const confirmNextBtn = makeButton('', async (e) => {
             cancelText: t('dialogs.dismiss')
           });
         }
-        break;
+        if (!dummy) break;
       }
 
       // Warn on missing required fields for the first iteration only; allow force-continue
-      if (!warnedOnce) {
+      if (!dummy && !warnedOnce) {
         const missing = findMissingRequiredFields(state.schema, mapping);
         const props = getSchemaProperties(state.schema) || {};
         const toDisplay = (field) => labelFromMeta(props[field] || {}, field);
@@ -256,7 +266,15 @@ const confirmNextBtn = makeButton('', async (e) => {
         warnedOnce = true;
       }
 
-      shiftMappingDown();
+      shiftMappingDown(
+        dummy
+          ? {
+              snapshotMutator: (snapshot) => {
+                snapshot.dummy_flag = [{ cell: '', literal: '1' }];
+              }
+            }
+          : undefined
+      );
       // Public interface notification: a successful confirm occurred.
       __notifyConfirm();
     }
@@ -268,9 +286,18 @@ const confirmNextBtn = makeButton('', async (e) => {
       cancelText: t('dialogs.dismiss')
     });
   }
-});
+}
+
+// "Confirm & Next" button – snapshot current mapping & shift down one row
+// Shift-click performs the operation 10 times in a row.
+const confirmNextBtn = makeButton('', (e) => confirmAndNext(e, { dummy: false }));
 
 controlsTop.appendChild(confirmNextBtn);
+
+// "Dummy & Next" button – snapshot record with dummy_flag = 1 & shift down one row
+const dummyNextBtn = makeButton('', (e) => confirmAndNext(e, { dummy: true }));
+dummyNextBtn.style.display = 'none';
+controlsTop.appendChild(dummyNextBtn);
 
 // Undo button – remove the last confirmed snapshot and restore overlays
 const undoBtn = makeButton('', async (e) => {
@@ -288,7 +315,7 @@ const undoBtn = makeButton('', async (e) => {
         store.set('records', trimmed);
         // Then restore mapping to the popped snapshot so overlays move back
         if (prevSnapshot && typeof prevSnapshot === 'object') {
-          store.set('mapping', prevSnapshot);
+          store.set('mapping', _sanitizeMappingForUi(prevSnapshot));
         }
         // Notify integrations about undo and generic change
         __notifyUndo();
@@ -340,10 +367,18 @@ controlsTop.appendChild(shadowToggleLabel);
 function updateControlLabels() {
   inspectBtn.textContent = t('controls.inspect_json');
   confirmNextBtn.textContent = t('controls.confirm_next');
+  dummyNextBtn.textContent = t('controls.dummy_next');
   undoBtn.textContent = t('controls.undo');
 }
 updateControlLabels();
 onI18nChange(updateControlLabels);
+
+function updateDummyButtonVisibility() {
+  const props = getSchemaProperties(store.getState().schema) || {};
+  dummyNextBtn.style.display = Object.prototype.hasOwnProperty.call(props, 'dummy_flag') ? '' : 'none';
+}
+store.subscribe(updateDummyButtonVisibility);
+updateDummyButtonVisibility();
 
 
 new MappingPanel({ parent: controlsBottom });

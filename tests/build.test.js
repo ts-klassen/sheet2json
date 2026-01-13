@@ -1,9 +1,9 @@
-import { execSync } from 'child_process';
 import fs from 'fs';
+import { ensureBuilt } from './helpers/ensureBuilt.js';
 
 describe('build script', () => {
   test('produces dist/bundle.js and index.html', () => {
-    execSync('npm run build', { stdio: 'ignore' });
+    ensureBuilt();
     expect(fs.existsSync('dist/bundle.js')).toBe(true);
     const html = fs.readFileSync('dist/index.html', 'utf8');
     expect(html).toContain('bundle.js');
