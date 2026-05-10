@@ -1,5 +1,5 @@
 /**
- * Development server configuration for es-dev-server.
+ * Development server configuration for Web Dev Server.
  *
  * This adds a small plugin that turns CSS imports (`import './foo.css';`)
  * into JS modules which inject the stylesheet into the document head.

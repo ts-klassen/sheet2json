@@ -40,9 +40,6 @@ describe('Field mapping → Confirm & Next → Export workflow', () => {
       win.__STORE__.set('schema', schemaStub);
       // Make sure mapping starts empty.
       win.__STORE__.set('mapping', {});
-      // Use legacy advanceField mode so test assertions stay the same.
-      win.__STORE__.set('confirmNextMode', 'advanceField');
-
       // Simulate a drag-and-drop from field list to cell (0,0).
       win.DraggableController.__test_emit('field', {
         field: 'title',
@@ -59,7 +56,7 @@ describe('Field mapping → Confirm & Next → Export workflow', () => {
     // object with the value from Sheet1!A1 ("Alice").
     cy.window().then((win) => {
       const json = win.buildJson();
-      expect(json).to.deep.equal({ title: 'Alice' });
+      expect(json).to.deep.equal({ cells: { title: { cell: 'A1', value: 'Alice' } } });
     });
   });
 });
@@ -93,7 +90,6 @@ describe('Mobile – touch/long-press mapping', () => {
       win.__STORE__.set('workbook', workbookStub);
       win.__STORE__.set('schema', schemaStub);
       win.__STORE__.set('mapping', {});
-      win.__STORE__.set('confirmNextMode', 'advanceField');
 
       // Simulate overlay drag – equivalent sensor path for touch.
       win.DraggableController.__test_emit('field', {
@@ -108,7 +104,7 @@ describe('Mobile – touch/long-press mapping', () => {
 
     cy.window().then((win) => {
       const json = win.buildJson();
-      expect(json).to.deep.equal({ desc: 'Mobile' });
+      expect(json).to.deep.equal({ cells: { desc: { cell: 'A1', value: 'Mobile' } } });
     });
   });
 });

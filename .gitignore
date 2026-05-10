@@ -20,5 +20,9 @@ dist/
 jest_output.txt
 jest_run.txt
 
+# Cypress artifacts
+cypress/screenshots/
+cypress/videos/
+
 # Temporary files
 tmp.js
